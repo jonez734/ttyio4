@@ -358,7 +358,7 @@ def echo(buf:str="", stripcommands:bool=False, level:str=None, datestamp=False, 
 # http://www.brandonrubin.me/2014/03/18/python-snippet-get-terminal-width/
 # https://www.programcreek.com/python/example/1922/termios.TIOCGWINSZ
 def getterminalwidth():
-  import get_terminal_size from shutil
+  from shutil import get_terminal_size
 
   res = get_terminal_size()
   return res.columns
