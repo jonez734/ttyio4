@@ -5,7 +5,7 @@ import select
 import socket
 import re
 
-from typing import Any, List
+from typing import Any, List, NamedTuple
 
 # @see http://www.python.org/doc/faq/library.html#how-do-i-get-a-single-keypress-at-a-time
 # @see http://craftsman-hambs.blogspot.com/2009/11/getch-in-python-read-character-without.html
@@ -190,143 +190,73 @@ mcicommands = (
 # { "command": "{autoblack}",      "alias": "{gray}"}
 )
 
-def optimizemci(tokens:list) -> list:
-  return tokens
-  foo = []
-  currentvalue = ""
-  lasttoken = None
-  for t in tokens:
-    if t["token"] == "WHITESPACE": # and (lasttoken is not None and lasttoken["token"] == "WHITESPACE"):
-      currentvalue += t["value"]
-    else:
-      if len(currentvalue) > 0:
-        foo.append({"token": "WHITESPACE", "value": currentvalue})
-        currentvalue = ""
-      foo.append(t)
-      currentvalue = ""
-    lasttoken = t
+class Token(NamedTuple):
+    type: str
+    value: str
 
-  return foo
-  
-  newtokens = []
-  for t in tokens:
-    if t["token"] == "WORD" and t["value"] == "":
-      continue
-    newtokens.append(t)
-  return newtokens
-  
-  newtokes = []
-  currenttoke = {"command": None, "value":None}
-  for i in range(0, len(tokens)-1):
-    token = tokens[i]
-    nexttoken = tokens[i+1]
-    c = token["command"]
-    if c == "WHITESPACE" and nexttoken["command"] == c:
-      newtokes.append({"token":c, "value": token["value"]+nexttoken["value"]})
-    else:
-      newtokes.append({"token":c, "value": token["value"]})
-  print("newtokes=%r" % (newtokes))
-  return newtokes
+def __tokenizemci(buf:str):
+    token_specification = [
+        ("OPENBRACE",  r'\{\{'),
+        ("CLOSEBRACE", r'\}\}'),
+        ("F6",         r'\{F6(:(\d))?\}'),
+        ("WHITESPACE", r'[ \t\n]+'), # iswhitespace()
+        ("COMMAND",    r'\{[^\}]+\}'),     # {red}, {brightyellow}, etc
+        ("WORD",       r'[^ \t\n\{\}]+'),
+        ('MISMATCH',   r'.')            # Any other character
+    ]
+    tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
+    for mo in re.finditer(tok_regex, buf):
+        kind = mo.lastgroup
+        print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
+        value = mo.group()
+        if kind == "WHITESPACE":
+            pass
+        elif kind == "COMMAND":
+            pass
+        elif kind == "WORD":
+            pass
+        elif kind == "F6":
+          value = mo.group(2) or mo.group(5) or 1
+        elif kind == 'MISMATCH':
+            pass
+            # raise RuntimeError(f'{value!r} unexpected on line {line_num}')
+        yield Token(kind, value)
 
-def interpmci(tokens:list, width:int=None, stripcommands=False, interpret=True) -> str:
-  if tokens is None or len(tokens) == 0:
-#    print("interpmci.100: tokens=%r" % (tokens))
-    return None
+def __interpretmci(buf:str, width=None, stripcommands:bool=False, interpret=True, end="\n") -> str:
+  if buf is None or buf == "":
+    return ""
 
   if width is None:
     width = getterminalwidth()
 
-  buf = ""
   pos = 0
-  for t in tokens:
-    token = t["token"]
-    value = t["value"]
-    if token == "WORD":
-      if len(value)+pos >= width:
-        pos = 0
-        buf += "\n"
-      else:
-        pos += len(value)
-        buf += value
-    elif token == "WHITESPACE":
-      buf += value # " "
-      pos += len(value)
-    elif token == "F6":
-      buf += "\n"
-      pos = 0
-    elif token == "COMMAND":
-      if stripcommands is False:
-        value = value.lower()
-        # print("value=%r" % (value))
-        for item in mcicommands:
-          command = item["command"]
-          ansi = item["ansi"] if "ansi" in item else None
-          alias = item["alias"] if "alias" in item else None
-          if value == command:
-            if ansi is not None:
-              if interpret is True:
-                buf += "\033[%s" % (ansi)
-              else:
-                buf += command
-            elif alias is not None:
-              buf += alias
-            break
-    else:
-      buf += value
-  return buf
-
-def tokenizemci(buf:str) -> list:
-  value = ""
-  token = None
-  tokens = []
+  result = ""
+  for token in __tokenizemci(buf):
+      # print(token)
+      # print("pos=%d" % (pos))
+      if token.type == "F6":
+          v = token.value if token.value is not None else 1
+          result += "\n"*v
+          pos = 0
+      elif token.type == "WHITESPACE":
+          result += token.value
+          pos += len(token.value)
+      elif token.type == "COMMAND":
+        if stripcommands is False:
+          result += "{command: %r}" % (token.value)
+      elif token.type == "WORD":
+          if pos+len(token.value) >= width-1:
+              result += "\n"
+              pos = len(token.value)
+              result += token.value
+          else:
+              result += token.value
+              pos += len(token.value)
   
-  if buf is None:
-    return None
-
-  # @TODO handle \r too
-  buf = buf.replace("\n", "{F6}")
-  # 3 possible tokens: WORD, COMMAND, and WHITESPACE
-  for ch in buf:
-    # print("ch=%r value=%r" % (ch, value))
-    if ch == "{":
-      if len(value) > 0:
-        tokens.append({"token":"WORD", "value":value})
-      token = "COMMAND"
-      value = ""
-    elif ch == "}":
-      if value == "F6":
-        tokens.append({"token":"{%s}" % (value), "value": "\n"})
-      else:
-        tokens.append({"token":token, "value":"{%s}" % (value)})
-      value = ""
-      token = None
-    elif ch.isspace() is True:
-      if value != "":
-        tokens.append({"token":"WORD", "value":value})
-      tokens.append({"token":"WHITESPACE", "value":ch})
-      value = ""
-      token = None
-    else:
-      value += ch
-
-  if len(value) > 0:
-    tokens.append({"token":"WORD", "value":value})
-  return tokens
-
-def handlemci(buf:str, stripcommands:bool=False, interpret=True, optimize=False) -> str:
-  if buf is None or buf == "":
-    return ""
-
-  tokens = tokenizemci(buf)
-#  print("tokens=%r" % (tokens))
-  if optimize is True:
-    tokens = optimizemci(tokens)
-    # print("handlemci.100: (optimized) tokens=%r" % (tokens))
-  buf = interpmci(tokens, stripcommands=stripcommands, interpret=interpret)
-  return buf
+  return result
 
 # copied from bbsengine.py
-def echo(buf:str="", stripcommands:bool=False, level:str=None, datestamp=False, end:str="\n", width:int=None, **kw):
+def echo(buf:str="", interpretmci:bool=True, stripcommands:bool=False, level:str=None, datestamp=False, end:str="\n", width:int=None, **kw):
   from dateutil.tz import tzlocal
   from datetime import datetime
   from time import strftime
@@ -350,8 +280,8 @@ def echo(buf:str="", stripcommands:bool=False, level:str=None, datestamp=False, 
       buf = "{autogreen}%s{/autogreen}" % (buf)
     buf += "{/all}"
 
-  buf = handlemci(buf, interpret=False, optimize=False)
-  buf = handlemci(buf, interpret=True, optimize=False)
+  if interpretmci is True:
+    buf = __interpretmci(buf, stripcommands=stripcommands, width=width, end=end)
   print(buf, end=end)
   return
 
