@@ -207,7 +207,7 @@ def __tokenizemci(buf:str):
     tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
     for mo in re.finditer(tok_regex, buf):
         kind = mo.lastgroup
-        print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
+        # print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
         value = mo.group()
         if kind == "WHITESPACE":
             pass
@@ -222,7 +222,7 @@ def __tokenizemci(buf:str):
             # raise RuntimeError(f'{value!r} unexpected on line {line_num}')
         yield Token(kind, value)
 
-def __interpretmci(buf:str, width=None, stripcommands:bool=False, interpret=True, end="\n") -> str:
+def __interpretmci(buf:str, width=None, stripcommands:bool=False, end="\n") -> str:
   if buf is None or buf == "":
     return ""
 
@@ -236,14 +236,28 @@ def __interpretmci(buf:str, width=None, stripcommands:bool=False, interpret=True
       # print("pos=%d" % (pos))
       if token.type == "F6":
           v = token.value if token.value is not None else 1
-          result += "\n"*v
+          result += "\n"*int(v)
           pos = 0
       elif token.type == "WHITESPACE":
           result += token.value
           pos += len(token.value)
       elif token.type == "COMMAND":
         if stripcommands is False:
-          result += "{command: %r}" % (token.value)
+          # result += "{command: %r}" % (token.value)
+          value = token.value.lower()
+          # print("value=%r" % (value))
+          for item in mcicommands:
+            # print("item=%r" % (item))
+            command = item["command"]
+            ansi = item["ansi"] if "ansi" in item else None
+            alias = item["alias"] if "alias" in item else None
+            if value == command:
+              if ansi is not None:
+                # print("added ansi seq")
+                result += "\033[%s" % (ansi)
+              elif alias is not None:
+                result += alias
+              break
       elif token.type == "WORD":
           if pos+len(token.value) >= width-1:
               result += "\n"
