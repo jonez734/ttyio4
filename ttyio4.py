@@ -195,6 +195,7 @@ class Token(NamedTuple):
     value: str
 
 def __tokenizemci(buf:str):
+    buf = buf.replace("\n", " ")
     token_specification = [
         ("OPENBRACE",  r'\{\{'),
         ("CLOSEBRACE", r'\}\}'),
@@ -210,16 +211,22 @@ def __tokenizemci(buf:str):
         # print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
         value = mo.group()
         if kind == "WHITESPACE":
-            pass
+          if value == "\n":
+            value = " "
+          # print("whitespace. value=%r" % (value))
         elif kind == "COMMAND":
             pass
         elif kind == "WORD":
             pass
         elif kind == "F6":
           value = mo.group(2) or mo.group(5) or 1
-        elif kind == 'MISMATCH':
+        elif kind == "MISMATCH":
             pass
             # raise RuntimeError(f'{value!r} unexpected on line {line_num}')
+        elif kind == "OPENBRACE":
+          value = "{"
+        elif kind == "CLOSEBRACE":
+          value = "}"
         yield Token(kind, value)
 
 def __interpretmci(buf:str, width=None, stripcommands:bool=False, end="\n") -> str:
@@ -259,14 +266,17 @@ def __interpretmci(buf:str, width=None, stripcommands:bool=False, end="\n") -> s
                 result += alias
               break
       elif token.type == "WORD":
-          if pos+len(token.value) >= width-1:
-              result += "\n"
-              pos = len(token.value)
-              result += token.value
-          else:
-              result += token.value
-              pos += len(token.value)
-  
+        if pos+len(token.value) >= width-1:
+          result += "\n"
+          pos = len(token.value)
+          result += token.value
+        else:
+          result += token.value
+          pos += len(token.value)
+      elif token.type == "OPENBRACE" or token.type == "CLOSEBRACE":
+        result += token.value
+        pos += 1
+
   return result
 
 # copied from bbsengine.py
