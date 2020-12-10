@@ -297,11 +297,11 @@ def echo(buf:str="", interpretmci:bool=True, stripcommands:bool=False, level:str
 #    if level == "debug":
 #      buf = "{autoblue}%s{/autoblue}" % (buf)
     if level == "warn":
-      buf = "{autoyellow}%s{/autoyellow}" % (buf)
+      buf = "{yellow}%s{/fgcolor}" % (buf)
     elif level == "error":
-      buf = "{autored}%s{/autored}" % (buf)
+      buf = "{red}%s{/fgcolor}" % (buf)
     elif level == "success":
-      buf = "{autogreen}%s{/autogreen}" % (buf)
+      buf = "{green}%s{/fgcolor}" % (buf)
     buf += "{/all}"
 
   if interpretmci is True:
