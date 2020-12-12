@@ -5,10 +5,6 @@ import select
 import socket
 import re
 
-from dateutil.tz import tzlocal
-from datetime import datetime
-from time import strftime
-
 from typing import Any, List, NamedTuple
 
 # @see http://www.python.org/doc/faq/library.html#how-do-i-get-a-single-keypress-at-a-time
