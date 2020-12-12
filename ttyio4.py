@@ -5,6 +5,10 @@ import select
 import socket
 import re
 
+from dateutil.tz import tzlocal
+from datetime import datetime
+from time import strftime
+
 from typing import Any, List, NamedTuple
 
 # @see http://www.python.org/doc/faq/library.html#how-do-i-get-a-single-keypress-at-a-time
@@ -100,20 +104,6 @@ def accept(prompt:str, options:str, default:str="", debug:bool=False) -> str:
     elif ch in options:
       return ch
 
-def inputboolean(prompt:str, default:bool=None) -> bool:
-	ch = accept(prompt, "YNTF", default)
-	if ch == "Y":
-		echo("Yes")
-		return True
-	elif ch == "T":
-		echo("True")
-		return True
-	elif ch == "N":
-		echo("No")
-		return False
-	elif ch == "F":
-		echo("False")
-		return False
 
 # https://www.c64-wiki.com/wiki/Color
 # https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -229,7 +219,7 @@ def __tokenizemci(buf:str):
           value = "}"
         yield Token(kind, value)
 
-def __interpretmci(buf:str, width=None, stripcommands:bool=False, end="\n") -> str:
+def interpretmci(buf:str, width=None, interpret=True, strip:bool=False, wordwrap=True, end="\n") -> str:
   if buf is None or buf == "":
     return ""
 
@@ -249,7 +239,7 @@ def __interpretmci(buf:str, width=None, stripcommands:bool=False, end="\n") -> s
           result += token.value
           pos += len(token.value)
       elif token.type == "COMMAND":
-        if stripcommands is False:
+        if strip is False:
           # result += "{command: %r}" % (token.value)
           value = token.value.lower()
           # print("value=%r" % (value))
@@ -280,10 +270,7 @@ def __interpretmci(buf:str, width=None, stripcommands:bool=False, end="\n") -> s
   return result
 
 # copied from bbsengine.py
-def echo(buf:str="", interpretmci:bool=True, stripcommands:bool=False, level:str=None, datestamp=False, end:str="\n", width:int=None, **kw):
-  from dateutil.tz import tzlocal
-  from datetime import datetime
-  from time import strftime
+def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, datestamp=False, end:str="\n", width:int=None, **kw):
 
   if width is None:
     width = getterminalwidth()
@@ -304,8 +291,7 @@ def echo(buf:str="", interpretmci:bool=True, stripcommands:bool=False, level:str
       buf = "{green}%s{/fgcolor}" % (buf)
     buf += "{/all}"
 
-  if interpretmci is True:
-    buf = __interpretmci(buf, stripcommands=stripcommands, width=width, end=end)
+  buf = interpretmci(buf, interpret=interpret, strip=strip, width=width, end=end)
   print(buf, end=end)
   return
 
@@ -383,17 +369,7 @@ def handlemenu(opts, title, items, oldrecord, currecord, prompt="option", defaul
         echo("{cyan}%s{/cyan}" % (ch.upper()), datestamp=False)
     return hotkeys[ch]
 
-# @since 20170419
-def inputdate(prompt, oldvalue=None, **kw):
-  if oldvalue is not None:
-    buf = inputstring(prompt, datestamp(oldvalue), **kw)
-  else:
-    buf = inputstring(prompt, **kw)
-  epoch = getdate.getdate(buf)
-  tz = LocalTimezone()
-  stamp = datetime.fromtimestamp(epoch, tz)
-  return stamp # datetime.fromtimestamp(epoch)
-
+  
 # @see https://stackoverflow.com/questions/9043551/regex-that-matches-integers-only
 def inputinteger(prompt, oldvalue=None, mask="^([+-]?[1-9]\d*|0)$", verify=None, opts=None) -> int:
   oldvalue = int(oldvalue) if oldvalue is not None else ""
@@ -444,7 +420,7 @@ def inputstring(prompt:str, oldvalue:str=None, opts:object=None, mask=None, retu
 
   while True:
     try:
-      prompt = handlemci(prompt)
+      prompt = interpretmci(prompt)
       buf = inputfunc(prompt)
     except KeyboardInterrupt:
       echo("INTR")
@@ -469,8 +445,7 @@ def inputstring(prompt:str, oldvalue:str=None, opts:object=None, mask=None, retu
         echo(re.match(mask, buf), level="debug")
 
       if re.match(mask, buf) is None:
-        echo("{lightred}invalid input{/lightred}")
-        echo()
+        echo("{F6}{lightred}invalid input{/lightred}{F6}")
         continue
 
     if multiple is True:
@@ -515,28 +490,6 @@ def inputstring(prompt:str, oldvalue:str=None, opts:object=None, mask=None, retu
   if len(result) == 1 and type(result) == type([]) and returnseq==False:
     return result[0]
   return result
-
-def inputboolean(prompt, options="YN", default=""):
-  ch = accept(prompt, options, default)
-  if ch == "Y":
-    echo("Yes")
-    return True
-  elif ch == "T":
-    echo("True")
-    return True
-  elif ch == "N":
-    echo("No")
-    return False
-  elif ch == "F":
-    echo("False")
-    return False
-  return None
-
-def areyousure(prompt="are you sure? ", default="N", options="YN") -> bool:
-  res = inputboolean(prompt, default=default, options=options)
-  if res is True:
-    return 0
-  return 1
 
 # @see https://stackoverflow.com/a/53981846
 def readablelist(seq: List[Any], color:str="", itemcolor:str="") -> str:
