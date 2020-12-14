@@ -180,6 +180,7 @@ class Token(NamedTuple):
     type: str
     value: str
 
+# @see https://docs.python.org/3/library/re.html#writing-a-tokenizer
 def __tokenizemci(buf:str):
     buf = buf.replace("\n", " ")
     token_specification = [
