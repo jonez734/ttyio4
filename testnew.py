@@ -1,6 +1,6 @@
 import ttyio4 as ttyio
 
-buf = """{F6:2}     {white}Lorem {{ipsum}} dolor sit amet,{F6}consectetur
+buf = """{F6:2}     {{testwhite}}{white}Lorem {{ipsum}} dolor sit amet,{F6}consectetur
 adipiscing elit.  Qu{blink}isqu{/blink}e ac risus tempor, {orange}porttitor
 diam id, ullamcorper ipsum.  Maecenas quis sapien eget massa finibus auctor. 
 Aliquam purus ligula, commodo ac tellus vitae, tincidunt molestie nisi. 
