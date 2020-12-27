@@ -68,7 +68,10 @@ def inputchar(prompt:str, options:str, default:str="", opts:object=None) -> str:
   sys.stdout.flush()
 
   while 1:
-    ch = getch().upper()
+    try:
+      ch = getch().upper()
+    except KeyboardInterrupt:
+      raise
 
     if ch == "\n":
       return default
@@ -76,6 +79,8 @@ def inputchar(prompt:str, options:str, default:str="", opts:object=None) -> str:
         return default
       else:
         return ch
+    elif ch == "\004":
+      raise EOFError
     elif ch in options:
       return ch
 
