@@ -134,6 +134,7 @@ mcicommands = (
 { "command": "{reverse}",    "ansi": "7m" },
 { "command": "{/reverse}",   "ansi": "27m" },
 
+# c64 color palette
 { "command": "{white}",      "ansi": "38;2;255;255;255m", "rgb": (255,255,255) }, # 37m
 { "command": "{red}",        "ansi": "38;2;136;0;0m",     "rgb": (136,0,0) }, # 31m
 { "command": "{cyan}",       "ansi": "38;2;170;255;238m", "rgb": (170,255,238) }, # 36m
@@ -166,18 +167,18 @@ mcicommands = (
 { "command": "{bglightgreen}", "ansi": "48;2;170;255;102m", "rgb": (170, 255, 102) },
 { "command": "{bglightblue}",  "ansi": "48;2;0;136;255m",   "rgb": (0, 136, 255) },
 { "command": "{bglightgray}",  "ansi": "48;2;187;187;187m", "rgb": (187, 187, 187) },
-{ "command": "{bgblack}",      "ansi": "48;2;0;0;0m",       "rgb": (0,0,0) }, # 30m
+{ "command": "{bgblack}",      "ansi": "48;2;0;0;0m",       "rgb": (0,0,0) } # 30m
 
-{ "command": "{autowhite}",    "alias": "{bold}{white}"},
-{ "command": "{autored}",      "alias": "{bold}{red}"},
-{ "command": "{autocyan}",     "alias": "{bold}{cyan}"},
-{ "command": "{autopurple}",   "alias": "{bold}{purple}"},
-{ "command": "{autogreen}",    "alias": "{bold}{green}"},
-{ "command": "{autoblue}",     "alias": "{bold}{blue}"},
-{ "command": "{autoyellow}",   "alias": "{bold}{yellow}"},
-{ "command": "{autoorange}",   "alias": "{bold}{orange}"},
-{ "command": "{autobrown}",    "alias": "{bold}{brown}"},
-{ "command": "{autogray}",     "alias": "{bold}{gray}"}
+#{ "command": "{autowhite}",    "alias": "{bold}{white}"},
+#{ "command": "{autored}",      "alias": "{bold}{red}"},
+#{ "command": "{autocyan}",     "alias": "{bold}{cyan}"},
+#{ "command": "{autopurple}",   "alias": "{bold}{purple}"},
+#{ "command": "{autogreen}",    "alias": "{bold}{green}"},
+#{ "command": "{autoblue}",     "alias": "{bold}{blue}"},
+#{ "command": "{autoyellow}",   "alias": "{bold}{yellow}"},
+#{ "command": "{autoorange}",   "alias": "{bold}{orange}"},
+#{ "command": "{autobrown}",    "alias": "{bold}{brown}"},
+#{ "command": "{autogray}",     "alias": "{bold}{gray}"}
 # { "command": "{autoblack}",      "alias": "{gray}"}
 )
 
@@ -412,26 +413,29 @@ def inputstring(prompt:str, oldvalue:str=None, opts:object=None, mask=None, retu
   multiple = kw["multiple"] if "multiple" in kw else None
   
   completer = kw["completer"] if "completer" in kw else None
+  if opts is not None and opts.debug is True:
+    echo("completer is %r" % (completer))
+
   if completer is not None and callable(completer.completer) is True:
+    # echo("inputstring.100: completer.completer() is callable", level="debug")
     if opts is not None and opts.debug is True:
       echo("setting completer function", level="debug")
     readline.parse_and_bind("tab: complete")
     readline.set_completer(completer.completer)
     if multiple is True:
       readline.set_completer_delims(", ")
+  else:
+    if opts is not None and opts.debug is True:
+      echo("completer is none or is not callable.")
 
   while True:
-    try:
-      prompt = interpretmci(prompt)
-      buf = inputfunc(prompt)
-    except KeyboardInterrupt:
-      echo("INTR")
-      raise
-    except EOFError:
-      echo("EOF")
-      raise
-    finally:
-      echo("{/all}") # print ("\x1b[0m", end="")
+    #try:
+    prompt = interpretmci(prompt)
+    buf = inputfunc(prompt)
+    #except (KeyboardInterrupt, EOFError) as e:
+    #  raise
+    #finally:
+    #  echo("{/all}") # print ("\x1b[0m", end="")
 
     if oldvalue is not None:
       readline.set_pre_input_hook(None)
