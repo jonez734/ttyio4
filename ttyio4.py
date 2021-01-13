@@ -192,7 +192,7 @@ def __tokenizemci(buf:str):
     token_specification = [
         ("OPENBRACE",  r'\{\{'),
         ("CLOSEBRACE", r'\}\}'),
-        ("F6",         r'\{F|f6(:(\d))?\}'),
+        ("F6",         r'\{F|f6(:(\d{,2}))?\}'),
         ("WHITESPACE", r'[ \t\n]+'), # iswhitespace()
         ("COMMAND",    r'\{[^\}]+\}'),     # {red}, {brightyellow}, etc
         ("WORD",       r'[^ \t\n\{\}]+'),
