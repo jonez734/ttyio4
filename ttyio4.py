@@ -111,10 +111,13 @@ def accept(prompt:str, options:str, default:str="", debug:bool=False) -> str:
 mcicommands = (
 { "command": "{clear}",      "ansi": "2J" },
 { "command": "{home}",       "ansi": "0;0H" },
-{ "command": "{clreol}",     "ansi": "0K" },
-{ "command": "{/all}",       "ansi": "0;39;49m" },
+{ "command": "{clreol}",     "ansi": "K" },
+# { "command": "{/all}",       "ansi": "0;39;49m" },
 { "command": "{/fgcolor}",   "ansi": "39m" },
 { "command": "{/bgcolor}",   "ansi": "49m" },
+
+#{ "command": "{savecursor}", "ansi": "s" },
+#{ "command": "{restorecursor}", "ansi": "u" },
 
 { "command": "{bold}",       "ansi": "1m" },
 { "command": "{/bold}",      "ansi": "22m" },
@@ -187,21 +190,29 @@ class Token(NamedTuple):
     value: str
 
 # @see https://docs.python.org/3/library/re.html#writing-a-tokenizer
-def __tokenizemci(buf:str):
+def __tokenizemci(buf:str, args=None):
     buf = buf.replace("\n", " ")
     token_specification = [
+        ("BELL",       r'\{BELL(:(\d{,2}))?\}'),
         ("OPENBRACE",  r'\{\{'),
         ("CLOSEBRACE", r'\}\}'),
-        ("F6",         r'\{F|f6(:(\d{,2}))?\}'),
+        ("RESETCOLOR", r'\{/ALL\}'),
+        ("RESET",      r'\{RESET\}'),
+        ("F6",         r'\{F6(:(\d{,2}))?\}'),
+        ("CURPOS",     r'\{CURPOS:(\d{,3})(,(\d{,3}))?\}'), # NOTE! this is y,x @see https://regex101.com/r/6Ww6sg/1
+        ("DECSTBM",    r'\{DECSTBM(:(\d{,3})(,(\d{,3}))?)?\}'), 
+        ("DECSC",      r'\{DECSC\}'),
+        ("DECRC",      r'\{DECRC\}'),
         ("WHITESPACE", r'[ \t\n]+'), # iswhitespace()
         ("COMMAND",    r'\{[^\}]+\}'),     # {red}, {brightyellow}, etc
         ("WORD",       r'[^ \t\n\{\}]+'),
         ('MISMATCH',   r'.')            # Any other character
     ]
     tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
-    for mo in re.finditer(tok_regex, buf):
+    for mo in re.finditer(tok_regex, buf, re.IGNORECASE):
         kind = mo.lastgroup
-        # print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
+        if args and args.debug is True:
+          print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
         value = mo.group()
         if kind == "WHITESPACE":
           if value == "\n":
@@ -220,17 +231,37 @@ def __tokenizemci(buf:str):
           value = "{"
         elif kind == "CLOSEBRACE":
           value = "}"
+        elif kind == "BELL":
+          value = mo.group(3) or 1
+        elif kind == "DECSTBM":
+          top = mo.group(17) or 0
+          bot = mo.group(19) or 0
+          value = (int(top), int(bot))
+        elif kind == "CURPOS":
+          y = mo.group(12)
+          x = mo.group(14) or 0
+          value = (int(y), int(x))
+        elif kind == "DECSC":
+          pass
+        elif kind == "DECRC":
+          pass
         yield Token(kind, value)
 
-def interpretmci(buf:str, width=None, interpret=True, strip:bool=False, wordwrap=True, end="\n") -> str:
+def interpretmci(buf:str, width:int=None, interpret:bool=True, strip:bool=False, wordwrap:bool=True, end:str="\n", args:object=None) -> str:
   if buf is None or buf == "":
     return ""
+
+  result = ""
+  if strip is True:
+    for token in __tokenizemci(buf):
+      if token.type == "WORD" or token.type == "WHITESPACE":
+        result += token.value
+    return result
 
   if width is None:
     width = getterminalwidth()
 
   pos = 0
-  result = ""
   for token in __tokenizemci(buf):
       # print(token)
       # print("pos=%d" % (pos))
@@ -241,6 +272,10 @@ def interpretmci(buf:str, width=None, interpret=True, strip:bool=False, wordwrap
       elif token.type == "WHITESPACE":
           result += token.value
           pos += len(token.value)
+      elif token.type == "BELL":
+          if args and args.debug is True:
+            print("BELL: value=%s" % (token.value))
+          # result += "\007"*int(v)
       elif token.type == "COMMAND":
         if strip is False:
           # result += "{command: %r}" % (token.value)
@@ -258,14 +293,34 @@ def interpretmci(buf:str, width=None, interpret=True, strip:bool=False, wordwrap
               elif alias is not None:
                 result += alias
               break
+      elif token.type == "DECSC":
+        result += "\033[s"
+      elif token.type == "DECRC":
+        result += "\033[u"
+      elif token.type == "CURPOS":
+        y, x = token.value
+        result += "\033[%d;%dH" % (y, x)
+      elif token.type == "DECSTBM":
+        top, bot = token.value
+        if bot == 0:
+          result += "\033[%dr" % (top)
+        else:
+          result += "\033[%d;%dr" % (top, bot)
+      elif token.type == "RESETCOLOR":
+        result += "\033[0;39;49m"
+      elif token.type == "RESET":
+        result += "\033[0;39;49m\033[s\033[0;0r\033[u"
       elif token.type == "WORD":
-        if pos+len(token.value) >= width-1:
-          result += "\n"
-          pos = len(token.value)
-          result += token.value
+        if wordwrap is True:
+          if pos+len(token.value) >= width-1:
+            result += "\n"
+            pos = len(token.value)
+            result += token.value
+          else:
+            result += token.value
+            pos += len(token.value)
         else:
           result += token.value
-          pos += len(token.value)
       elif token.type == "OPENBRACE" or token.type == "CLOSEBRACE":
         result += token.value
         pos += 1
@@ -273,7 +328,7 @@ def interpretmci(buf:str, width=None, interpret=True, strip:bool=False, wordwrap
   return result
 
 # copied from bbsengine.py
-def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, datestamp=False, end:str="\n", width:int=None, **kw):
+def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, datestamp=False, end:str="\n", width:int=None, wordwrap=True, **kw):
 
   if width is None:
     width = getterminalwidth()
@@ -294,35 +349,19 @@ def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, date
       buf = "{green}%s{/fgcolor}" % (buf)
     buf += "{/all}"
 
-  buf = interpretmci(buf, interpret=interpret, strip=strip, width=width, end=end)
+  buf = interpretmci(buf, interpret=interpret, strip=strip, width=width, end=end, wordwrap=wordwrap)
   print(buf, end=end)
   return
 
 # http://www.brandonrubin.me/2014/03/18/python-snippet-get-terminal-width/
 # https://www.programcreek.com/python/example/1922/termios.TIOCGWINSZ
 def getterminalwidth():
-  from shutil import get_terminal_size
-
-  res = get_terminal_size()
+  res = os.get_terminal_size()
   return res.columns
 
-  import subprocess
-
-  command = ['tput', 'cols']
-
-#  if sys.stdout.isatty() is False:
-#    return False
-
-  try:
-    width = int(subprocess.check_output(command))
-  except OSError as e:
-    print("Invalid Command '{0}': exit status ({1})".format(command[0], e.errno))
-    return False
-  except subprocess.CalledProcessError as e:
-    print("Command '{0}' returned non-zero exit status: ({1})".format(command, e.returncode))
-    return False
-  else:
-    return width
+def getterminalheight():
+  res = os.get_terminal_size()
+  return res.lines
 
 # @see https://tldp.org/HOWTO/Xterm-Title-3.html
 def xtname(name):
