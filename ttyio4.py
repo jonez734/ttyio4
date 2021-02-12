@@ -9,7 +9,7 @@ from typing import Any, List, NamedTuple
 
 # @see http://www.python.org/doc/faq/library.html#how-do-i-get-a-single-keypress-at-a-time
 # @see http://craftsman-hambs.blogspot.com/2009/11/getch-in-python-read-character-without.html
-def getch() -> str:
+def getch(noneok:bool=False) -> str:
   fd = sys.stdin.fileno()
 
   oldterm = termios.tcgetattr(fd)
@@ -29,7 +29,9 @@ def getch() -> str:
                 if e.args[0] == 4:
                   echo("interupted system call (tab switch?)")
                   continue
-              if len(r) == 1:
+              if len(r) == 0 and noneok is True:
+                return None
+              elif len(r) == 1:
                 ch = sys.stdin.read(1)
                 return ch
   finally:
@@ -58,10 +60,10 @@ def collapselist(lst):
     return ", ".join("{0}-{1}".format(*l) if l[0] != l[1] else l[0] for l in ranges)
 
 # @since 20201105
-def inputchar(prompt:str, options:str, default:str="", opts:object=None) -> str:
+def inputchar(prompt:str, options:str, default:str="", opts:object=None, noneok:bool=False) -> str:
   if opts is not None and opts.debug is True:
     echo("ttyio4.inputchar.100: options=%s" % (options), level="debug")
-        
+
   default = default.upper() if default is not None else ""
   options = options.upper()
   echo(prompt, end="")
@@ -69,7 +71,7 @@ def inputchar(prompt:str, options:str, default:str="", opts:object=None) -> str:
 
   while 1:
     try:
-      ch = getch().upper()
+      ch = getch(noneok).upper()
     except KeyboardInterrupt:
       raise
 
@@ -83,6 +85,8 @@ def inputchar(prompt:str, options:str, default:str="", opts:object=None) -> str:
       raise EOFError
     elif ch in options:
       return ch
+    elif ch is None:
+      return None
 
 def accept(prompt:str, options:str, default:str="", debug:bool=False) -> str:
   if debug is True:
@@ -111,7 +115,7 @@ def accept(prompt:str, options:str, default:str="", debug:bool=False) -> str:
 mcicommands = (
 { "command": "{clear}",      "ansi": "2J" },
 { "command": "{home}",       "ansi": "0;0H" },
-{ "command": "{clreol}",     "ansi": "K" },
+# { "command": "{clreol}",     "ansi": "K" },
 # { "command": "{/all}",       "ansi": "0;39;49m" },
 { "command": "{/fgcolor}",   "ansi": "39m" },
 { "command": "{/bgcolor}",   "ansi": "49m" },
@@ -204,6 +208,8 @@ def __tokenizemci(buf:str, args=None):
         ("DECSC",      r'\{DECSC\}'),
         ("DECRC",      r'\{DECRC\}'),
         ("WHITESPACE", r'[ \t\n]+'), # iswhitespace()
+        ("CHA",	       r'\{CHA(:(\d{,3}))?\}'),
+        ("ERASELINE",  r'\{EL(:(\d))?\}'),
         ("COMMAND",    r'\{[^\}]+\}'),     # {red}, {brightyellow}, etc
         ("WORD",       r'[^ \t\n\{\}]+'),
         ('MISMATCH',   r'.')            # Any other character
@@ -245,6 +251,10 @@ def __tokenizemci(buf:str, args=None):
           pass
         elif kind == "DECRC":
           pass
+        elif kind == "CHA":
+          value = mo.group(2) or 1
+        elif kind == "ERASELINE":
+          value = mo.group(2) or 0
         yield Token(kind, value)
 
 def interpretmci(buf:str, width:int=None, interpret:bool=True, strip:bool=False, wordwrap:bool=True, end:str="\n", args:object=None) -> str:
@@ -310,6 +320,10 @@ def interpretmci(buf:str, width:int=None, interpret:bool=True, strip:bool=False,
         result += "\033[0;39;49m"
       elif token.type == "RESET":
         result += "\033[0;39;49m\033[s\033[0;0r\033[u"
+      elif token.type == "CHA":
+        result += "\033[%dG" % (token.value)
+      elif token.type == "ERASELINE":
+        result += "\033[%dK" % (token.value)
       elif token.type == "WORD":
         if wordwrap is True:
           if pos+len(token.value) >= width-1:
