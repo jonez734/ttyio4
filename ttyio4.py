@@ -9,7 +9,7 @@ from typing import Any, List, NamedTuple
 
 # @see http://www.python.org/doc/faq/library.html#how-do-i-get-a-single-keypress-at-a-time
 # @see http://craftsman-hambs.blogspot.com/2009/11/getch-in-python-read-character-without.html
-def getch(noneok:bool=False) -> str:
+def getch(noneok:bool=False, timeout=0.250) -> str:
   fd = sys.stdin.fileno()
 
   oldterm = termios.tcgetattr(fd)
@@ -23,7 +23,7 @@ def getch(noneok:bool=False) -> str:
   try:
       while 1:
               try:
-                r, w, x = select.select([fd],[],[],0.250)
+                r, w, x = select.select([fd], [], [], timeout)
               except socket.error as e:
                 echo("%r: %r" % (e.code, e.msg), level="error")
                 if e.args[0] == 4:
