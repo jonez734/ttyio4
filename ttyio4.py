@@ -257,7 +257,7 @@ def __tokenizemci(buf:str, args=None):
           value = mo.group(2) or 0
         yield Token(kind, value)
 
-def interpretmci(buf:str, width:int=None, interpret:bool=True, strip:bool=False, wordwrap:bool=True, end:str="\n", args:object=None) -> str:
+def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, end:str="\n", args:object=None) -> str:
   if buf is None or buf == "":
     return ""
 
@@ -283,9 +283,9 @@ def interpretmci(buf:str, width:int=None, interpret:bool=True, strip:bool=False,
           result += token.value
           pos += len(token.value)
       elif token.type == "BELL":
-          if args and args.debug is True:
-            print("BELL: value=%s" % (token.value))
-          # result += "\007"*int(v)
+        #if args and args.debug is True:
+        #print("BELL: value=%s" % (token.value))
+        result += "\007"*int(token.value)
       elif token.type == "COMMAND":
         if strip is False:
           # result += "{command: %r}" % (token.value)
@@ -358,12 +358,13 @@ def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, date
     if level == "warn":
       buf = "{yellow}%s{/fgcolor}" % (buf)
     elif level == "error":
-      buf = "{red}%s{/fgcolor}" % (buf)
+      buf = "{lightred}%s{/fgcolor}" % (buf)
     elif level == "success":
       buf = "{green}%s{/fgcolor}" % (buf)
     buf += "{/all}"
 
-  buf = interpretmci(buf, interpret=interpret, strip=strip, width=width, end=end, wordwrap=wordwrap)
+  if interpret is True:
+    buf = interpretmci(buf, strip=strip, width=width, end=end, wordwrap=wordwrap)
   print(buf, end=end)
   return
 
@@ -427,9 +428,10 @@ def handlemenu(opts, title, items, oldrecord, currecord, prompt="option", defaul
 
   
 # @see https://stackoverflow.com/questions/9043551/regex-that-matches-integers-only
-def inputinteger(prompt, oldvalue=None, mask="^([+-]?[1-9]\d*|0)$", verify=None, opts=None) -> int:
+def inputinteger(prompt, oldvalue=None, mask="^([+-]?[1-9]\d*|0)$", verify=None, args=None) -> int:
+  echo("inputinteger.100: verify=%r" % (verify))
   oldvalue = int(oldvalue) if oldvalue is not None else ""
-  buf = inputstring(prompt, oldvalue, mask=mask, verify=verify, opts=opts)
+  buf = inputstring(prompt, oldvalue, mask=mask, verify=verify, args=args)
 
   if buf is None or buf == "":
     return None
@@ -446,7 +448,7 @@ def inputinteger(prompt, oldvalue=None, mask="^([+-]?[1-9]\d*|0)$", verify=None,
 # @since 20200626
 # @since 20200729
 # @since 20200901
-def inputstring(prompt:str, oldvalue:str=None, opts:object=None, mask=None, returnseq=False, **kw) -> str:
+def inputstring(prompt:str, oldvalue:str=None, args:object=None, mask=None, returnseq=False, **kw) -> str:
   import readline
   def preinputhook():
     readline.insert_text(str(oldvalue))
@@ -466,19 +468,19 @@ def inputstring(prompt:str, oldvalue:str=None, opts:object=None, mask=None, retu
   multiple = kw["multiple"] if "multiple" in kw else None
   
   completer = kw["completer"] if "completer" in kw else None
-  if opts is not None and opts.debug is True:
+  if args is not None and args.debug is True:
     echo("completer is %r" % (completer))
 
   if completer is not None and callable(completer.completer) is True:
     # echo("inputstring.100: completer.completer() is callable", level="debug")
-    if opts is not None and opts.debug is True:
+    if args is not None and args.debug is True:
       echo("setting completer function", level="debug")
     readline.parse_and_bind("tab: complete")
     readline.set_completer(completer.completer)
     if multiple is True:
       readline.set_completer_delims(", ")
   else:
-    if opts is not None and opts.debug is True:
+    if args is not None and args.debug is True:
       echo("completer is none or is not callable.")
 
   while True:
@@ -500,7 +502,7 @@ def inputstring(prompt:str, oldvalue:str=None, opts:object=None, mask=None, retu
         return oldvalue
 
     if mask is not None:
-      if opts is not None and opts.debug is True:
+      if args is not None and args.debug is True:
         echo(re.match(mask, buf), level="debug")
 
       if re.match(mask, buf) is None:
@@ -526,19 +528,19 @@ def inputstring(prompt:str, oldvalue:str=None, opts:object=None, mask=None, retu
     completions = bang
     validcompletions = []
 
-    if opts is not None and opts.debug is True:
+    if args is not None and args.debug is True:
       echo("inputstring.200: verify is callable", level="debug")
 
     invalid = 0
     for c in completions:
-      if verify(opts, c) is True:
+      if verify(args, c) is True:
         validcompletions.append(c)
       else:
         echo("%r is not valid" % (c))
         invalid += 1
         continue
     if invalid == 0:
-      if opts.debug is True:
+      if args.debug is True:
         echo("inputstring.220: no invalid entries, exiting loop")
       result = validcompletions
       break
@@ -634,6 +636,23 @@ class genericInputCompleter(object):
       self.matches = self.getmatches(text)
 
     return self.matches[state]
+
+# @since 20210203
+def inputboolean(prompt:str, default:str=None, options="YNTF") -> bool:
+  ch = inputchar(prompt, options, default)
+  if ch == "Y":
+          echo("Yes")
+          return True
+  elif ch == "T":
+          echo("True")
+          return True
+  elif ch == "N":
+          echo("No")
+          return False
+  elif ch == "F":
+          echo("False")
+          return False
+  return
 
 if __name__ == "__main__":
   print(inputchar("[A, B, C, D]", "ABCD", None))
