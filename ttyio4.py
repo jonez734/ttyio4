@@ -6,6 +6,7 @@ import socket
 import re
 
 from typing import Any, List, NamedTuple
+from argparse import Namespace
 
 # @see http://www.python.org/doc/faq/library.html#how-do-i-get-a-single-keypress-at-a-time
 # @see http://craftsman-hambs.blogspot.com/2009/11/getch-in-python-read-character-without.html
@@ -60,8 +61,8 @@ def collapselist(lst):
     return ", ".join("{0}-{1}".format(*l) if l[0] != l[1] else l[0] for l in ranges)
 
 # @since 20201105
-def inputchar(prompt:str, options:str, default:str="", opts:object=None, noneok:bool=False) -> str:
-  if opts is not None and opts.debug is True:
+def inputchar(prompt:str, options:str, default:str="", args:object=Namespace(), noneok:bool=False) -> str:
+  if args is not None and "debug" in args and args.debug is True:
     echo("ttyio4.inputchar.100: options=%s" % (options), level="debug")
 
   default = default.upper() if default is not None else ""
@@ -194,7 +195,7 @@ class Token(NamedTuple):
     value: str
 
 # @see https://docs.python.org/3/library/re.html#writing-a-tokenizer
-def __tokenizemci(buf:str, args=None):
+def __tokenizemci(buf:str, args:object=Namespace()):
     buf = buf.replace("\n", " ")
     token_specification = [
         ("BELL",       r'\{BELL(:(\d{,2}))?\}'),
@@ -217,7 +218,7 @@ def __tokenizemci(buf:str, args=None):
     tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
     for mo in re.finditer(tok_regex, buf, re.IGNORECASE):
         kind = mo.lastgroup
-        if args and args.debug is True:
+        if args is not None and "debug" in args and args.debug is True:
           print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
         value = mo.group()
         if kind == "WHITESPACE":
@@ -257,7 +258,7 @@ def __tokenizemci(buf:str, args=None):
           value = mo.group(2) or 0
         yield Token(kind, value)
 
-def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, end:str="\n", args:object=None) -> str:
+def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, end:str="\n", args=Namespace()) -> str:
   if buf is None or buf == "":
     return ""
 
@@ -385,7 +386,7 @@ def xtname(name):
   echo("\033]0;%s\x07" % (name))
   return
 
-def handlemenu(opts, title, items, oldrecord, currecord, prompt="option", defaulthotkey=""):
+def handlemenu(args, title, items, oldrecord, currecord, prompt="option", defaulthotkey=""):
     hotkeys = {}
 
     hotkeystr = ""
@@ -428,7 +429,7 @@ def handlemenu(opts, title, items, oldrecord, currecord, prompt="option", defaul
 
   
 # @see https://stackoverflow.com/questions/9043551/regex-that-matches-integers-only
-def inputinteger(prompt, oldvalue=None, mask="^([+-]?[1-9]\d*|0)$", verify=None, args=None) -> int:
+def inputinteger(prompt, oldvalue=None, mask="^([+-]?[1-9]\d*|0)$", verify=None, args=Namespace()) -> int:
   echo("inputinteger.100: verify=%r" % (verify))
   oldvalue = int(oldvalue) if oldvalue is not None else ""
   buf = inputstring(prompt, oldvalue, mask=mask, verify=verify, args=args)
@@ -448,7 +449,7 @@ def inputinteger(prompt, oldvalue=None, mask="^([+-]?[1-9]\d*|0)$", verify=None,
 # @since 20200626
 # @since 20200729
 # @since 20200901
-def inputstring(prompt:str, oldvalue:str=None, args:object=None, mask=None, returnseq=False, **kw) -> str:
+def inputstring(prompt:str, oldvalue:str=None, **kw) -> str:
   import readline
   def preinputhook():
     readline.insert_text(str(oldvalue))
@@ -462,25 +463,37 @@ def inputstring(prompt:str, oldvalue:str=None, args:object=None, mask=None, retu
   except NameError:
     inputfunc = input
   
-  oldcompleter = readline.get_completer()
-  olddelims = readline.get_completer_delims()
+
+  args = kw["args"] if "args" in kw else Namespace()
+
+  mask = kw["mask"] if "mask" in kw else None
+
+  returnseq = kw["returnseq"] if "returnseq" in kw else False
 
   multiple = kw["multiple"] if "multiple" in kw else None
-  
-  completer = kw["completer"] if "completer" in kw else None
-  if args is not None and args.debug is True:
+
+  oldcompleter = readline.get_completer()
+  completer = kw["completer"] if "completer" in kw else oldcompleter
+
+  oldcompleterdelims = readline.get_completer_delims()
+  completerdelims = kw["completerdelims"] if "completerdelims" in kw else oldcompleterdelims
+
+  echo("inputstring.100: completerdelims=%r" % (completerdelims), interpret=False)
+
+  if args is not None and "debug" in args and args.debug is True:
     echo("completer is %r" % (completer))
 
   if completer is not None and callable(completer.completer) is True:
     # echo("inputstring.100: completer.completer() is callable", level="debug")
-    if args is not None and args.debug is True:
+    if args is not None and "debug" in args and args.debug is True:
       echo("setting completer function", level="debug")
     readline.parse_and_bind("tab: complete")
     readline.set_completer(completer.completer)
     if multiple is True:
-      readline.set_completer_delims(", ")
+      completerdelims += ", "
+      readline.set_completer_delims(completerdelims)
   else:
-    if args is not None and args.debug is True:
+    if args is not None and "debug" in args and args.debug is True:
       echo("completer is none or is not callable.")
 
   while True:
@@ -502,7 +515,7 @@ def inputstring(prompt:str, oldvalue:str=None, args:object=None, mask=None, retu
         return oldvalue
 
     if mask is not None:
-      if args is not None and args.debug is True:
+      if args is not None and "debug" in args and args.debug is True:
         echo(re.match(mask, buf), level="debug")
 
       if re.match(mask, buf) is None:
@@ -528,7 +541,7 @@ def inputstring(prompt:str, oldvalue:str=None, args:object=None, mask=None, retu
     completions = bang
     validcompletions = []
 
-    if args is not None and args.debug is True:
+    if args is not None and "debug" in args and args.debug is True:
       echo("inputstring.200: verify is callable", level="debug")
 
     invalid = 0
@@ -540,13 +553,13 @@ def inputstring(prompt:str, oldvalue:str=None, args:object=None, mask=None, retu
         invalid += 1
         continue
     if invalid == 0:
-      if args.debug is True:
+      if args is not None and "debug" in args and args.debug is True:
         echo("inputstring.220: no invalid entries, exiting loop")
       result = validcompletions
       break
 
   readline.set_completer(oldcompleter)
-  readline.set_completer_delims(olddelims)
+  readline.set_completer_delims(oldcompleterdelims)
 
   if len(result) == 1 and type(result) == type([]) and returnseq==False:
     return result[0]
@@ -596,10 +609,10 @@ def detectansi():
 
 # @since 20201013
 class genericInputCompleter(object):
-  def __init__(self:object, opts:object, tablename:str, primarykey:str):
+  def __init__(self:object, args:object, tablename:str, primarykey:str):
     self.matches = []
-    self.dbh = bbsengine.databaseconnect(opts)
-    self.debug = opts.debug
+    self.dbh = bbsengine.databaseconnect(args)
+    self.debug = args.debug if "debug" in args else False
     self.tablename = tablename
     self.primarykey = primarykey
 
