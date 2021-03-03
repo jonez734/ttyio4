@@ -478,17 +478,15 @@ def inputstring(prompt:str, oldvalue:str=None, **kw) -> str:
   oldcompleterdelims = readline.get_completer_delims()
   completerdelims = kw["completerdelims"] if "completerdelims" in kw else oldcompleterdelims
 
-  echo("inputstring.100: completerdelims=%r" % (completerdelims), interpret=False)
-
   if args is not None and "debug" in args and args.debug is True:
+    echo("inputstring.100: completerdelims=%r" % (completerdelims), interpret=False)
     echo("completer is %r" % (completer))
 
-  if completer is not None and callable(completer.completer) is True:
-    # echo("inputstring.100: completer.completer() is callable", level="debug")
+  if completer is not None and hasattr(completer, "complete") and callable(completer.complete) is True:
     if args is not None and "debug" in args and args.debug is True:
       echo("setting completer function", level="debug")
     readline.parse_and_bind("tab: complete")
-    readline.set_completer(completer.completer)
+    readline.set_completer(completer.complete)
     if multiple is True:
       completerdelims += ", "
       readline.set_completer_delims(completerdelims)
