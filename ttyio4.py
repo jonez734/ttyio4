@@ -190,6 +190,34 @@ mcicommands = (
 # { "command": "{autoblack}",      "alias": "{gray}"}
 )
 
+acs = {
+        "ULCORNER":"l",
+        "LLCORNER":"m",
+        "URCORNER":"k",
+        "LRCORNER":"j",
+        "LTEE":    "t",
+        "RTEE":    "u",
+        "BTEE":    "v",
+        "TTEE":    "w",
+        "HLINE":   "q",
+        "VLINE":   "x",
+        "PLUS":    "n",
+        "S1":      "o",
+        "S9":      "s",
+        "DIAMOND": "`",
+        "CKBOARD": "a",
+        "DEGREE":  "f",
+        "PLMINUS": "g",
+        "BULLET":  "~",
+        "LARROW":  ",",
+        "RARROW":  "+",
+        "DARROW":  ".",
+        "UARROW":  "-",
+        "BOARD":   "h",
+        "LANTERN": "i",
+        "BLOCK":   "0"
+}
+
 class Token(NamedTuple):
     type: str
     value: str
@@ -211,6 +239,7 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         ("WHITESPACE", r'[ \t\n]+'), # iswhitespace()
         ("CHA",	       r'\{CHA(:(\d{,3}))?\}'),
         ("ERASELINE",  r'\{EL(:(\d))?\}'),
+        ("ACS",        r'\{ACS:([a-z0-9]+)(:([0-9]{,3}))?\}'),
         ("COMMAND",    r'\{[^\}]+\}'),     # {red}, {brightyellow}, etc
         ("WORD",       r'[^ \t\n\{\}]+'),
         ('MISMATCH',   r'.')            # Any other character
@@ -256,6 +285,12 @@ def __tokenizemci(buf:str, args:object=Namespace()):
           value = mo.group(2) or 1
         elif kind == "ERASELINE":
           value = mo.group(2) or 0
+        elif kind == "ACS":
+          # print(mo.groups())
+          # @FIX: why the huge offset?
+          command = mo.group(28+2)
+          repeat = int(mo.group(28+4)) or 1
+          value = (command, repeat)
         yield Token(kind, value)
 
 def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, end:str="\n", args=Namespace()) -> str:
@@ -325,6 +360,14 @@ def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, 
         result += "\033[%dG" % (token.value)
       elif token.type == "ERASELINE":
         result += "\033[%dK" % (token.value)
+      elif token.type == "ACS":
+        # print("acs. value=%s" % (str(token.value)))
+        command, repeat = token.value
+        # echo("command=%r, repeat=%r" % (command, repeat))
+        if command.upper() in acs:
+          char = acs[command.upper()]
+          result += "\033(0%s\033(B" % (char*repeat)
+          pos += len(char*repeat)
       elif token.type == "WORD":
         if wordwrap is True:
           if pos+len(token.value) >= width-1:
