@@ -415,10 +415,34 @@ def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, date
 # http://www.brandonrubin.me/2014/03/18/python-snippet-get-terminal-width/
 # https://www.programcreek.com/python/example/1922/termios.TIOCGWINSZ
 def getterminalwidth():
-  res = os.get_terminal_size()
-  return res.columns
+  #try:
+  #  res = os.get_terminal_size()
+  #except:
+  #  return 80
+  #else:
+  #  return res.columns
+  import subprocess
+
+  command = ['tput', 'cols']
+
+#  if sys.stdout.isatty() is False:
+#    return False
+
+  try:
+    width = int(subprocess.check_output(command))
+  except OSError as e:
+    print("Invalid Command '{0}': exit status ({1})".format(command[0], e.errno))
+    return False
+  except subprocess.CalledProcessError as e:
+    print("Command '{0}' returned non-zero exit status: ({1})".format(command, e.returncode))
+    return False
+  else:
+    return width
 
 def getterminalheight():
+  if sys.stdout.isatty() is False:
+    return False
+
   res = os.get_terminal_size()
   return res.lines
 
