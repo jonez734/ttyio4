@@ -230,15 +230,15 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         ("OPENBRACE",  r'\{\{'),
         ("CLOSEBRACE", r'\}\}'),
         ("RESETCOLOR", r'\{/ALL\}'),
-        ("RESET",      r'\{RESET\}'),
-        ("F6",         r'\{F6(:(\d{,2}))?\}'),
+        ("RESET",      r'\{RESET\}'), # reset color+margins
+        ("F6",         r'\{F6(:(\d{,2}))?\}'), # force a carriage return
         ("CURPOS",     r'\{CURPOS:(\d{,3})(,(\d{,3}))?\}'), # NOTE! this is y,x @see https://regex101.com/r/6Ww6sg/1
-        ("DECSTBM",    r'\{DECSTBM(:(\d{,3})(,(\d{,3}))?)?\}'), 
-        ("DECSC",      r'\{DECSC\}'),
-        ("DECRC",      r'\{DECRC\}'),
+        ("DECSTBM",    r'\{DECSTBM(:(\d{,3})(,(\d{,3}))?)?\}'),  # set top, bottom margin
+        ("DECSC",      r'\{DECSC\}'), # save cursor position and current attributes
+        ("DECRC",      r'\{DECRC\}'), # restore cursor position and attributes
         ("WHITESPACE", r'[ \t\n]+'), # iswhitespace()
-        ("CHA",	       r'\{CHA(:(\d{,3}))?\}'),
-        ("ERASELINE",  r'\{EL(:(\d))?\}'),
+        ("CHA",	       r'\{CHA(:(\d{,3}))?\}'), # Moves the cursor to column n (default 1). 
+        ("ERASELINE",  r'\{EL(:(\d))?\}'), # erase line
         ("ACS",        r'\{ACS:([a-z0-9]+)(:([0-9]{,3}))?\}'),
         ("COMMAND",    r'\{[^\}]+\}'),     # {red}, {brightyellow}, etc
         ("WORD",       r'[^ \t\n\{\}]+'),
@@ -289,7 +289,7 @@ def __tokenizemci(buf:str, args:object=Namespace()):
           # print(mo.groups())
           # @FIX: why the huge offset?
           command = mo.group(28+2)
-          repeat = int(mo.group(28+4)) or 1
+          repeat = mo.group(28+4) or 1
           value = (command, repeat)
         yield Token(kind, value)
 
@@ -356,18 +356,18 @@ def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, 
         result += "\033[0;39;49m"
       elif token.type == "RESET":
         result += "\033[0;39;49m\033[s\033[0;0r\033[u"
-      elif token.type == "CHA":
+      elif token.type == "CHA": # Moves the cursor to column n (default 1)
         result += "\033[%dG" % (token.value)
-      elif token.type == "ERASELINE":
+      elif token.type == "ERASELINE": # Erases part of the line. If n is 0 (or missing), clear from cursor to the end of the line. If n is 1, clear from cursor to beginning of the line. If n is 2, clear entire line. Cursor position does not change. 
         result += "\033[%dK" % (token.value)
-      elif token.type == "ACS":
+      elif token.type == "ACS": # use alternate character set
         # print("acs. value=%s" % (str(token.value)))
         command, repeat = token.value
         # echo("command=%r, repeat=%r" % (command, repeat))
         if command.upper() in acs:
           char = acs[command.upper()]
-          result += "\033(0%s\033(B" % (char*repeat)
-          pos += len(char*repeat)
+          result += "\033(0%s\033(B" % (char*int(repeat))
+          pos += len(char*int(repeat))
       elif token.type == "WORD":
         if wordwrap is True:
           if pos+len(token.value) >= width-1:
