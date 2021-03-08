@@ -450,7 +450,7 @@ def getterminalheight():
 def xtname(name):
   if sys.stdout.isatty() is False:
     return False
-  echo("\033]0;%s\x07" % (name))
+  echo("\033]0;%s\007" % (name))
   return
 
 def handlemenu(args, title, items, oldrecord, currecord, prompt="option", defaulthotkey=""):
@@ -556,7 +556,7 @@ def inputstring(prompt:str, oldvalue:str=None, **kw) -> str:
     readline.set_completer(completer.complete)
     if multiple is True:
       completerdelims += ", "
-      readline.set_completer_delims(completerdelims)
+    readline.set_completer_delims(completerdelims)
   else:
     if args is not None and "debug" in args and args.debug is True:
       echo("completer is none or is not callable.")
@@ -588,7 +588,7 @@ def inputstring(prompt:str, oldvalue:str=None, **kw) -> str:
         continue
 
     if multiple is True:
-      completions = buf.split(",")
+      completions = buf.split(completerdelims) # ",")
     else:
       completions = [buf]
 
@@ -601,9 +601,12 @@ def inputstring(prompt:str, oldvalue:str=None, **kw) -> str:
       break
 
     bang = []
-    for c in completions:
-      bang += c.split(" ")
-    completions = bang
+    if completerdelims != "":
+      for c in completions:
+        bang += c.split(completerdelims)
+      completions = bang
+    else:
+      completions = [buf]
     validcompletions = []
 
     if args is not None and "debug" in args and args.debug is True:
