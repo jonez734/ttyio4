@@ -20,7 +20,7 @@ def getch(noneok:bool=False, timeout=0.250) -> str:
   termios.tcsetattr(fd, termios.TCSANOW, newattr)
 
   oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
-  fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
+  # fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
   try:
       while 1:
               try:
@@ -38,7 +38,7 @@ def getch(noneok:bool=False, timeout=0.250) -> str:
   finally:
       termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
       fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
-      print ("\033[0m", end="")
+      echo("{/all}", end="") # print ("\033[0m", end="")
 
   return ch
 
