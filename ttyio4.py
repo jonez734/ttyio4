@@ -10,7 +10,7 @@ from argparse import Namespace
 
 # @see http://www.python.org/doc/faq/library.html#how-do-i-get-a-single-keypress-at-a-time
 # @see http://craftsman-hambs.blogspot.com/2009/11/getch-in-python-read-character-without.html
-def getch(noneok:bool=False, timeout=0.250) -> str:
+def getch(noneok:bool=False, timeout=0.250, echo=True) -> str:
   fd = sys.stdin.fileno()
 
   oldterm = termios.tcgetattr(fd)
@@ -38,7 +38,7 @@ def getch(noneok:bool=False, timeout=0.250) -> str:
   finally:
       termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
       fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
-      echo("{/all}", end="") # print ("\033[0m", end="")
+      # echo("{/all}", end="") # print ("\033[0m", end="")
 
   return ch
 
@@ -496,10 +496,10 @@ def handlemenu(args, title, items, oldrecord, currecord, prompt="option", defaul
 
   
 # @see https://stackoverflow.com/questions/9043551/regex-that-matches-integers-only
-def inputinteger(prompt, oldvalue=None, mask="^([+-]?[1-9]\d*|0)$", verify=None, args=Namespace()) -> int:
-  echo("inputinteger.100: verify=%r" % (verify))
+def inputinteger(prompt, oldvalue=None, **kw) -> int:
   oldvalue = int(oldvalue) if oldvalue is not None else ""
-  buf = inputstring(prompt, oldvalue, mask=mask, verify=verify, args=args)
+  mask = kw["mask"] if "mask" in kw else r"^([+-]?[1-9]\d*|0)$"
+  buf = inputstring(prompt, oldvalue, mask=mask, **kw)
 
   if buf is None or buf == "":
     return None
@@ -584,7 +584,7 @@ def inputstring(prompt:str, oldvalue:str=None, **kw) -> str:
         echo(re.match(mask, buf), level="debug")
 
       if re.match(mask, buf) is None:
-        echo("{F6}{lightred}invalid input{/lightred}{F6}")
+        echo("{F6}{lightred}invalid input{/all}{F6}")
         continue
 
     if multiple is True:
