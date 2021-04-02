@@ -10,34 +10,38 @@ from argparse import Namespace
 
 # @see http://www.python.org/doc/faq/library.html#how-do-i-get-a-single-keypress-at-a-time
 # @see http://craftsman-hambs.blogspot.com/2009/11/getch-in-python-read-character-without.html
-def getch(noneok:bool=False, timeout=0.250, echo=True) -> str:
+def getch(noneok:bool=False, timeout=0.250, echoch=False) -> str:
   fd = sys.stdin.fileno()
 
   oldterm = termios.tcgetattr(fd)
 
   newattr = termios.tcgetattr(fd)
-  newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
+
+  newattr[3] = newattr[3] & ~termios.ICANON  
+
+  if echoch is False:
+    newattr[3] = newattr[3] & ~termios.ECHO
+
   termios.tcsetattr(fd, termios.TCSANOW, newattr)
 
   oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
   # fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
   try:
       while 1:
-              try:
-                r, w, x = select.select([fd], [], [], timeout)
-              except socket.error as e:
-                echo("%r: %r" % (e.code, e.msg), level="error")
-                if e.args[0] == 4:
-                  echo("interupted system call (tab switch?)")
-                  continue
-              if len(r) == 0 and noneok is True:
-                return None
-              elif len(r) == 1:
-                ch = sys.stdin.read(1)
-                return ch
+        try:
+          r, w, x = select.select([fd], [], [], timeout)
+        except socket.error as e:
+          echo("%r: %r" % (e.code, e.msg), level="error")
+          if e.args[0] == 4:
+            echo("interupted system call (tab switch?)")
+            continue
+        if len(r) == 0 and noneok is True:
+          return None
+
+        return sys.stdin.read(1)
   finally:
-      termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
-      fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
+        termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
+        fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
       # echo("{/all}", end="") # print ("\033[0m", end="")
 
   return ch
@@ -61,18 +65,17 @@ def collapselist(lst):
     return ", ".join("{0}-{1}".format(*l) if l[0] != l[1] else l[0] for l in ranges)
 
 # @since 20201105
-def inputchar(prompt:str, options:str, default:str="", args:object=Namespace(), noneok:bool=False) -> str:
-  if args is not None and "debug" in args and args.debug is True:
+def inputchar(prompt:str, options:str, default:str="", args:object=Namespace(), noneok:bool=False, echoch=False) -> str:
+  if "debug" in args and args.debug is True:
     echo("ttyio4.inputchar.100: options=%s" % (options), level="debug")
 
   default = default.upper() if default is not None else ""
   options = options.upper()
-  echo(prompt, end="")
-  sys.stdout.flush()
+  echo(prompt, end="", flush=True)
 
   while 1:
     try:
-      ch = getch(noneok).upper()
+      ch = getch(noneok=noneok, echoch=echoch).upper()
     except KeyboardInterrupt:
       raise
 
@@ -95,8 +98,7 @@ def accept(prompt:str, options:str, default:str="", debug:bool=False) -> str:
         
   default = default.upper() if default is not None else ""
   options = options.upper()
-  echo(prompt, end="")
-  sys.stdout.flush()
+  echo(prompt, end="", flush=True)
 
   while 1:
     ch = getch().upper()
@@ -109,7 +111,6 @@ def accept(prompt:str, options:str, default:str="", debug:bool=False) -> str:
         return ch
     elif ch in options:
       return ch
-
 
 # https://www.c64-wiki.com/wiki/Color
 # https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -386,7 +387,7 @@ def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, 
   return result
 
 # copied from bbsengine.py
-def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, datestamp=False, end:str="\n", width:int=None, wordwrap=True, **kw):
+def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, datestamp=False, end:str="\n", width:int=None, wordwrap=True, flush=False, **kw):
 
   if width is None:
     width = getterminalwidth()
@@ -410,6 +411,8 @@ def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, date
   if interpret is True:
     buf = interpretmci(buf, strip=strip, width=width, end=end, wordwrap=wordwrap)
   print(buf, end=end)
+  if flush is True:
+    sys.stdout.flush()
   return
 
 # http://www.brandonrubin.me/2014/03/18/python-snippet-get-terminal-width/
@@ -519,9 +522,11 @@ def inputinteger(prompt, oldvalue=None, **kw) -> int:
 def inputstring(prompt:str, oldvalue:str=None, **kw) -> str:
   import readline
   def preinputhook():
+    # echo("preinputhook.100: trace")
     readline.insert_text(str(oldvalue))
     readline.redisplay()
 
+  # echo("inputstring.100: oldvalue=%r" % (oldvalue))
   if oldvalue is not None:
     readline.set_pre_input_hook(preinputhook)
 
@@ -543,16 +548,17 @@ def inputstring(prompt:str, oldvalue:str=None, **kw) -> str:
   completer = kw["completer"] if "completer" in kw else oldcompleter
 
   oldcompleterdelims = readline.get_completer_delims()
-  completerdelims = kw["completerdelims"] if "completerdelims" in kw else oldcompleterdelims
+
+  completerdelims = kw["completerdelims"] if "completerdelims" in kw else readline.get_completer_delims()
 
   if args is not None and "debug" in args and args.debug is True:
     echo("inputstring.100: completerdelims=%r" % (completerdelims), interpret=False)
     echo("completer is %r" % (completer))
 
+  readline.parse_and_bind("tab: complete")
   if completer is not None and hasattr(completer, "complete") and callable(completer.complete) is True:
     if args is not None and "debug" in args and args.debug is True:
       echo("setting completer function", level="debug")
-    readline.parse_and_bind("tab: complete")
     readline.set_completer(completer.complete)
     if multiple is True:
       completerdelims += ", "
@@ -563,8 +569,7 @@ def inputstring(prompt:str, oldvalue:str=None, **kw) -> str:
 
   while True:
     #try:
-    prompt = interpretmci(prompt)
-    buf = inputfunc(prompt)
+    buf = inputfunc(interpretmci(prompt))
     #except (KeyboardInterrupt, EOFError) as e:
     #  raise
     #finally:
@@ -640,10 +645,10 @@ def readablelist(seq: List[Any], color:str="", itemcolor:str="") -> str:
 
     if len(seq) < 3:
       buf = "%s and %s" % (color, itemcolor)
-      return buf.join(seq) # " and ".join(seq)
+      return itemcolor+buf.join(seq) # " and ".join(seq)
 
     buf = "%s, %s" % (color, itemcolor)
-    return buf.join(seq[:-1]) + '%s, and %s' % (color, itemcolor) + seq[-1]
+    return itemcolor+buf.join(seq[:-1]) + '%s, and %s' % (color, itemcolor) + seq[-1]
 
 # @since 20200917
 def detectansi():
@@ -721,6 +726,8 @@ class genericInputCompleter(object):
 # @since 20210203
 def inputboolean(prompt:str, default:str=None, options="YNTF") -> bool:
   ch = inputchar(prompt, options, default)
+  if ch is not None:
+    ch = ch.upper()
   if ch == "Y":
           echo("Yes")
           return True
