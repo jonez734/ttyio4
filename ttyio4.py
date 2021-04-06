@@ -35,8 +35,11 @@ def getch(noneok:bool=False, timeout=0.250, echoch=False) -> str:
           if e.args[0] == 4:
             echo("interupted system call (tab switch?)")
             continue
-        if len(r) == 0 and noneok is True:
-          return None
+        if len(r) == 0:
+          if noneok is True:
+            return None
+
+          continue
 
         return sys.stdin.read(1)
   finally:
@@ -75,22 +78,32 @@ def inputchar(prompt:str, options:str, default:str="", args:object=Namespace(), 
 
   while 1:
     try:
-      ch = getch(noneok=noneok, echoch=echoch).upper()
+      ch = getch(noneok=noneok, echoch=echoch)
+      if ch is not None:
+        ch = ch.upper()
     except KeyboardInterrupt:
       raise
 
+    # echo("inputchar.100: ch=%r" % (ch))
+
     if ch == "\n":
-      return default
-      if default is not None:
+      if noneok is True:
+        # echo("inputchar.110: noneok is true, returning none.")
+        return None
+      elif default is not None and default != "":
+        # echo("inputchar.120: returning default %r" % (default))
         return default
       else:
-        return ch
+        echo("{bell}", end="", flush=True)
+        continue
     elif ch == "\004":
       raise EOFError
-    elif ch in options:
+    elif ch is not None and ch in options:
+      # echo("%r is in %r" % (ch, options))
       return ch
-    elif ch is None:
-      return None
+    elif ch is not None:
+      echo("{bell}", end="", flush=True)
+      continue
 
 def accept(prompt:str, options:str, default:str="", debug:bool=False) -> str:
   if debug is True:
@@ -639,16 +652,16 @@ def inputstring(prompt:str, oldvalue:str=None, **kw) -> str:
   return result
 
 # @see https://stackoverflow.com/a/53981846
-def readablelist(seq: List[Any], color:str="", itemcolor:str="") -> str:
+def readablelist(seq: List[Any], sepcolor:str="", itemcolor:str="") -> str:
     """Return a grammatically correct human readable string (with an Oxford comma)."""
     seq = [str(s) for s in seq]
 
     if len(seq) < 3:
-      buf = "%s and %s" % (color, itemcolor)
+      buf = "%s and %s" % (sepcolor, itemcolor)
       return itemcolor+buf.join(seq) # " and ".join(seq)
 
-    buf = "%s, %s" % (color, itemcolor)
-    return itemcolor+buf.join(seq[:-1]) + '%s, and %s' % (color, itemcolor) + seq[-1]
+    buf = "%s, %s" % (sepcolor, itemcolor)
+    return itemcolor+buf.join(seq[:-1]) + '%s, and %s' % (sepcolor, itemcolor) + seq[-1]
 
 # @since 20200917
 def detectansi():
