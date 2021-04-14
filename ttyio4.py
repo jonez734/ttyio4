@@ -462,6 +462,10 @@ def getterminalheight():
   res = os.get_terminal_size()
   return res.lines
 
+# @since 20210411
+def getterminalsize():
+  return os.get_terminal_size()
+
 # @see https://tldp.org/HOWTO/Xterm-Title-3.html
 def xtname(name):
   if sys.stdout.isatty() is False:
