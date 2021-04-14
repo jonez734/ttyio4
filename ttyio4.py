@@ -252,11 +252,11 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         ("DECRC",      r'\{DECRC\}'), # restore cursor position and attributes
         ("WHITESPACE", r'[ \t\n]+'), # iswhitespace()
         ("CHA",	       r'\{CHA(:(\d{,3}))?\}'), # Moves the cursor to column n (default 1). 
-        ("ERASELINE",  r'\{EL(:(\d))?\}'), # erase line
+        ("ERASELINE",  r'\{(EL|ERASELINE)(:(\d))?\}'), # erase line
         ("ACS",        r'\{ACS:([a-z0-9]+)(:([0-9]{,3}))?\}'),
         ("COMMAND",    r'\{[^\}]+\}'),     # {red}, {brightyellow}, etc
         ("WORD",       r'[^ \t\n\{\}]+'),
-        ('MISMATCH',   r'.')            # Any other character
+        ('MISMATCH',   r'.')            # Any other pattern
     ]
     tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
     for mo in re.finditer(tok_regex, buf, re.IGNORECASE):
@@ -298,7 +298,7 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         elif kind == "CHA":
           value = mo.group(2) or 1
         elif kind == "ERASELINE":
-          value = mo.group(2) or 0
+          value = mo.group(3) or 0
         elif kind == "ACS":
           # print(mo.groups())
           # @FIX: why the huge offset?
