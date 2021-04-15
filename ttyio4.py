@@ -252,8 +252,8 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         ("DECRC",      r'\{DECRC\}'), # restore cursor position and attributes
         ("WHITESPACE", r'[ \t\n]+'), # iswhitespace()
         ("CHA",	       r'\{CHA(:(\d{,3}))?\}'), # Moves the cursor to column n (default 1). 
-        ("ERASELINE",  r'\{(EL|ERASELINE)(:(\d))?\}'), # erase line
         ("ACS",        r'\{ACS:([a-z0-9]+)(:([0-9]{,3}))?\}'),
+        ("ERASELINE",  r'\{(ERASELINE|EL)(:(\d))?\}'), # erase line
         ("COMMAND",    r'\{[^\}]+\}'),     # {red}, {brightyellow}, etc
         ("WORD",       r'[^ \t\n\{\}]+'),
         ('MISMATCH',   r'.')            # Any other pattern
@@ -261,8 +261,7 @@ def __tokenizemci(buf:str, args:object=Namespace()):
     tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
     for mo in re.finditer(tok_regex, buf, re.IGNORECASE):
         kind = mo.lastgroup
-        if args is not None and "debug" in args and args.debug is True:
-          print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
+        # print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
         value = mo.group()
         if kind == "WHITESPACE":
           if value == "\n":
@@ -302,9 +301,10 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         elif kind == "ACS":
           # print(mo.groups())
           # @FIX: why the huge offset?
-          command = mo.group(28+2)
-          repeat = mo.group(28+4) or 1
+          command = mo.group(26+1)
+          repeat = mo.group(26+3) or 1
           value = (command, repeat)
+          # print("value.command=%r, value.repeat=%r" % (command, repeat))
         yield Token(kind, value)
 
 def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, end:str="\n", args=Namespace()) -> str:
@@ -377,8 +377,8 @@ def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, 
       elif token.type == "ACS": # use alternate character set
         # print("acs. value=%s" % (str(token.value)))
         command, repeat = token.value
-        # echo("command=%r, repeat=%r" % (command, repeat))
-        if command.upper() in acs:
+        # print("command=%r, repeat=%r" % (command, repeat))
+        if command is not None and command.upper() in acs:
           char = acs[command.upper()]
           result += "\033(0%s\033(B" % (char*int(repeat))
           pos += len(char*int(repeat))
