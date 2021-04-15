@@ -240,20 +240,20 @@ class Token(NamedTuple):
 def __tokenizemci(buf:str, args:object=Namespace()):
     buf = buf.replace("\n", " ")
     token_specification = [
-        ("BELL",       r'\{BELL(:(\d{,2}))?\}'),
+        ("ACS",        r'\{ACS:([a-z0-9]+)(:([0-9]{,3}))?\}'),
         ("OPENBRACE",  r'\{\{'),
         ("CLOSEBRACE", r'\}\}'),
         ("RESETCOLOR", r'\{/ALL\}'),
         ("RESET",      r'\{RESET\}'), # reset color+margins
         ("F6",         r'\{F6(:(\d{,2}))?\}'), # force a carriage return
         ("CURPOS",     r'\{CURPOS:(\d{,3})(,(\d{,3}))?\}'), # NOTE! this is y,x @see https://regex101.com/r/6Ww6sg/1
-        ("DECSTBM",    r'\{DECSTBM(:(\d{,3})(,(\d{,3}))?)?\}'),  # set top, bottom margin
-        ("DECSC",      r'\{DECSC\}'), # save cursor position and current attributes
-        ("DECRC",      r'\{DECRC\}'), # restore cursor position and attributes
         ("WHITESPACE", r'[ \t\n]+'), # iswhitespace()
         ("CHA",	       r'\{CHA(:(\d{,3}))?\}'), # Moves the cursor to column n (default 1). 
-        ("ACS",        r'\{ACS:([a-z0-9]+)(:([0-9]{,3}))?\}'),
         ("ERASELINE",  r'\{(ERASELINE|EL)(:(\d))?\}'), # erase line
+        ("DECSC",      r'\{DECSC\}'), # save cursor position and current attributes
+        ("DECRC",      r'\{DECRC\}'), # restore cursor position and attributes
+        ("DECSTBM",    r'\{DECSTBM(:(\d{,3})(,(\d{,3}))?)?\}'),  # set top, bottom margin
+        ("BELL",       r'\{BELL(:(\d{,2}))?\}'),
         ("COMMAND",    r'\{[^\}]+\}'),     # {red}, {brightyellow}, etc
         ("WORD",       r'[^ \t\n\{\}]+'),
         ('MISMATCH',   r'.')            # Any other pattern
@@ -301,8 +301,8 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         elif kind == "ACS":
           # print(mo.groups())
           # @FIX: why the huge offset?
-          command = mo.group(26+1)
-          repeat = mo.group(26+3) or 1
+          command = mo.group(1+1)
+          repeat = mo.group(1+3) or 1
           value = (command, repeat)
           # print("value.command=%r, value.repeat=%r" % (command, repeat))
         yield Token(kind, value)
