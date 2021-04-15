@@ -8,3 +8,10 @@
 ## todo
 
 - [ ] add kw arg to specify how \n is handled (space vs empty vs {f6})
+
+## notes
+
+- for some reason, the order of the expressions in token_specification are
+  order sensitive (mismatched parens?)-- if I put ERASELINE below ACS in the
+  list, the offset required for ACS shifts.
+- afaik, all of the regexps are balanced and syntax-error free.
