@@ -16,5 +16,5 @@
 - for some reason, the order of the expressions in token_specification are order sensitive (mismatched parens?)
   * if I put ERASELINE below ACS in the list, the offset required for ACS shifts.
   * after reordering of the token spec, I had to fix {f6} because the group offset changed.
+  * afaik, all of the regexps are balanced and syntax-error free.
   * solution: every pattern is in a group. if I change the order of the groups, it makes sense that the offsets will change.
-- afaik, all of the regexps are balanced and syntax-error free.
