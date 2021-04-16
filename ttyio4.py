@@ -261,7 +261,7 @@ def __tokenizemci(buf:str, args:object=Namespace()):
     tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
     for mo in re.finditer(tok_regex, buf, re.IGNORECASE):
         kind = mo.lastgroup
-        # print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
+        print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
         value = mo.group()
         if kind == "WHITESPACE":
           if value == "\n":
@@ -272,7 +272,7 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         elif kind == "WORD":
             pass
         elif kind == "F6":
-          value = mo.group(2) or mo.group(5) or 1
+          value = mo.group(11) or 1
         elif kind == "MISMATCH":
             pass
             # raise RuntimeError(f'{value!r} unexpected on line {line_num}')
