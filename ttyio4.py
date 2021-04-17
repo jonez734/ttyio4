@@ -261,7 +261,11 @@ def __tokenizemci(buf:str, args:object=Namespace()):
     tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
     for mo in re.finditer(tok_regex, buf, re.IGNORECASE):
         kind = mo.lastgroup
-        print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
+        # print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
+        # print("%r: " % (kind))
+        #for g in range(1, len(mo.groups())+1):
+        #  print("%d: %s" % (g, mo.group(g)))
+
         value = mo.group()
         if kind == "WHITESPACE":
           if value == "\n":
@@ -281,14 +285,14 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         elif kind == "CLOSEBRACE":
           value = "}"
         elif kind == "BELL":
-          value = mo.group(3) or 1
+          value = mo.group(33) or 1
         elif kind == "DECSTBM":
-          top = mo.group(17) or 0
-          bot = mo.group(19) or 0
+          top = mo.group(28) or 0
+          bot = mo.group(30) or 0
           value = (int(top), int(bot))
         elif kind == "CURPOS":
-          y = mo.group(12)
-          x = mo.group(14) or 0
+          y = mo.group(13)
+          x = mo.group(15) or 0
           value = (int(y), int(x))
         elif kind == "DECSC":
           pass
@@ -301,8 +305,8 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         elif kind == "ACS":
           # print(mo.groups())
           # @FIX: why the huge offset?
-          command = mo.group(1+1)
-          repeat = mo.group(1+3) or 1
+          command = mo.group(2)
+          repeat = mo.group(4) or 1
           value = (command, repeat)
           # print("value.command=%r, value.repeat=%r" % (command, repeat))
         yield Token(kind, value)
@@ -400,7 +404,7 @@ def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, 
   return result
 
 # copied from bbsengine.py
-def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, datestamp=False, end:str="\n", width:int=None, wordwrap=True, flush=False, **kw):
+def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, datestamp=False, end:str="\n", width:int=None, wordwrap=True, flush=False, args:object=Namespace(), **kw):
 
   if width is None:
     width = getterminalwidth()
@@ -414,15 +418,15 @@ def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, date
 #    if level == "debug":
 #      buf = "{autoblue}%s{/autoblue}" % (buf)
     if level == "warn":
-      buf = "{yellow}%s{/fgcolor}" % (buf)
+      buf = "{yellow}%s" % (buf)
     elif level == "error":
-      buf = "{lightred}%s{/fgcolor}" % (buf)
+      buf = "{lightred}%s" % (buf)
     elif level == "success":
-      buf = "{green}%s{/fgcolor}" % (buf)
+      buf = "{green}%s" % (buf)
     buf += "{/all}"
 
   if interpret is True:
-    buf = interpretmci(buf, strip=strip, width=width, end=end, wordwrap=wordwrap)
+    buf = interpretmci(buf, strip=strip, width=width, end=end, wordwrap=wordwrap, args=args)
   print(buf, end=end)
   if flush is True:
     sys.stdout.flush()
