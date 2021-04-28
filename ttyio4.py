@@ -415,14 +415,14 @@ def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, date
     buf = "%s %s" % (stamp, buf)
 
   if level is not None:
-#    if level == "debug":
-#      buf = "{autoblue}%s{/autoblue}" % (buf)
+    if level == "debug":
+      buf = "{bglightblue}{blue} %s {/all}}" % (buf)
     if level == "warn":
-      buf = "{yellow}%s" % (buf)
+      buf = "{bgyellow}{black} %s {/all}" % (buf)
     elif level == "error":
-      buf = "{lightred}%s" % (buf)
+      buf = "{bgred}{black} %s {/all}" % (buf)
     elif level == "success":
-      buf = "{green}%s" % (buf)
+      buf = "{bggreen}{black} %s {/all}" % (buf)
     buf += "{/all}"
 
   if interpret is True:
