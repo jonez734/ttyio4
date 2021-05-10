@@ -27,7 +27,10 @@ def getch(noneok:bool=False, timeout=0.250, echoch=False) -> str:
   oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
   # fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
   try:
-      while 1:
+      ansi = ""
+      flag = False
+      while True:
+        # echo("ttyio4.getch.100: ansi=%r" % (ansi), level="debug")
         try:
           r, w, x = select.select([fd], [], [], timeout)
         except socket.error as e:
@@ -35,13 +38,24 @@ def getch(noneok:bool=False, timeout=0.250, echoch=False) -> str:
           if e.args[0] == 4:
             echo("interupted system call (tab switch?)")
             continue
-        if len(r) == 0:
-          if noneok is True:
-            return None
+        if len(r) == 0 and noneok is True:
+          break
 
+        ch = sys.stdin.read(1)
+        if flag is True:
+          ansi += ch
           continue
+        if ch == 27:
+          flag = True
+          ansi = "\x1b"
+          continue
+        else:
+          return ch
 
-        return sys.stdin.read(1)
+#        if noneok is True:
+#          return None
+
+      return ansi
   finally:
         termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
         fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
@@ -232,6 +246,22 @@ acs = {
         "BLOCK":   "0"
 }
 
+variables = {}
+variables["theanswer"] = 42
+
+def setvariable(name:str, value):
+  variables[name] = value
+  return
+
+def getvariable(name:str):
+  if name in variables:
+    return variables[name]
+  return None
+
+def clearvariables():
+  variables = {}
+  return
+
 class Token(NamedTuple):
     type: str
     value: str
@@ -246,7 +276,7 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         ("RESETCOLOR", r'\{/ALL\}'),
         ("RESET",      r'\{RESET\}'), # reset color+margins
         ("F6",         r'\{F6(:(\d{,2}))?\}'), # force a carriage return
-        ("CURPOS",     r'\{CURPOS:(\d{,3})(,(\d{,3}))?\}'), # NOTE! this is y,x @see https://regex101.com/r/6Ww6sg/1
+        ("CURPOS",     r'\{CURPOS:(\d{,3})(,(\d{,3}))?\}'), # NOTE! this is y,x (ala ncurses) @see https://regex101.com/r/6Ww6sg/1
         ("WHITESPACE", r'[ \t\n]+'), # iswhitespace()
         ("CHA",	       r'\{CHA(:(\d{,3}))?\}'), # Moves the cursor to column n (default 1). 
         ("ERASELINE",  r'\{(ERASELINE|EL)(:(\d))?\}'), # erase line
@@ -254,6 +284,7 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         ("DECRC",      r'\{DECRC\}'), # restore cursor position and attributes
         ("DECSTBM",    r'\{DECSTBM(:(\d{,3})(,(\d{,3}))?)?\}'),  # set top, bottom margin
         ("BELL",       r'\{BELL(:(\d{,2}))?\}'),
+        ("VAR",	       r'\{VAR:([0-9a-zA-Z_.-]+)\}'),
         ("COMMAND",    r'\{[^\}]+\}'),     # {red}, {brightyellow}, etc
         ("WORD",       r'[^ \t\n\{\}]+'),
         ('MISMATCH',   r'.')            # Any other pattern
@@ -263,8 +294,8 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         kind = mo.lastgroup
         # print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
         # print("%r: " % (kind))
-        #for g in range(1, len(mo.groups())+1):
-        #  print("%d: %s" % (g, mo.group(g)))
+        for g in range(1, len(mo.groups())+1):
+          print("%d: %s" % (g, mo.group(g)))
 
         value = mo.group()
         if kind == "WHITESPACE":
@@ -309,6 +340,14 @@ def __tokenizemci(buf:str, args:object=Namespace()):
           repeat = mo.group(4) or 1
           value = (command, repeat)
           # print("value.command=%r, value.repeat=%r" % (command, repeat))
+        elif kind == "VAR":
+          # echo("var! mo.groups=%r" % (repr(mo.groups())), level="debug", interpret=False)
+          var = mo.group(35)
+          if var in variables:
+            value = variables[var]
+          else:
+            value = None
+          print("__tokenizemci.100: var=%r value=%r" % (var, value))
         yield Token(kind, value)
 
 def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, end:str="\n", args=Namespace()) -> str:
@@ -400,6 +439,8 @@ def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, 
       elif token.type == "OPENBRACE" or token.type == "CLOSEBRACE":
         result += token.value
         pos += 1
+      elif token.type == "VAR":
+        pass
 
   return result
 
