@@ -17,12 +17,8 @@
   * getvariable(name) - returns variables[name] if name exists, else None (which is also a valid value. only other option would be to raise an exception)
   * clearvariables() - resets the variables dict to empty
   * usage: {var:<name>} in echo()
+- [ ] how to handle hitting esc and returning KEY_ESC?
 
 ## notes
 
-- for some reason, the order of the expressions in token_specification are order sensitive (mismatched parens?)
-  * if I put ERASELINE below ACS in the list, the offset required for ACS shifts.
-  * after reordering of the token spec, I had to fix {f6} because the group offset changed.
-  * afaik, all of the regexps are balanced and syntax-error free.
-  * sucinct: every pattern is in a group. if I change the order of the groups, it makes sense that the offsets will change.
-  * solution: don't mess with it
+- order of patterns is critical. do not mess with it
