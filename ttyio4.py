@@ -8,6 +8,20 @@ import re
 from typing import Any, List, NamedTuple
 from argparse import Namespace
 
+keys = {
+  "[A": "KEY_CURSORUP",
+  "[B": "KEY_CURSORDOWN",
+  "[C": "KEY_CURSORRIGHT",
+  "[D": "KEY_CURSORLEFT",
+  "[H": "KEY_HOME",
+  "[F": "KEY_END",
+  "[5~": "KEY_PAGEUP",
+  "[6~": "KEY_PAGEDOWN",
+  "[2~": "KEY_INS",
+  "[3~": "KEY_DEL",
+  "OP": "KEY_F1"
+}
+
 # @see http://www.python.org/doc/faq/library.html#how-do-i-get-a-single-keypress-at-a-time
 # @see http://craftsman-hambs.blogspot.com/2009/11/getch-in-python-read-character-without.html
 def getch(noneok:bool=False, timeout=0.250, echoch=False) -> str:
@@ -27,10 +41,11 @@ def getch(noneok:bool=False, timeout=0.250, echoch=False) -> str:
   oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
   # fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
   try:
-      ansi = ""
+#      echo("ttyio4.getch.220: before while true")
+      buf = ""
       flag = False
       while True:
-        # echo("ttyio4.getch.100: ansi=%r" % (ansi), level="debug")
+#        echo("ttyio4.getch.200: flag=%r" % (flag), level="debug")
         try:
           r, w, x = select.select([fd], [], [], timeout)
         except socket.error as e:
@@ -41,27 +56,24 @@ def getch(noneok:bool=False, timeout=0.250, echoch=False) -> str:
         if len(r) == 0 and noneok is True:
           break
 
+        echo("ttyio4.getch.120: flag=%r, buf=%r" % (flag, buf))
         ch = sys.stdin.read(1)
-        if flag is True:
-          ansi += ch
-          continue
-        if ch == 27:
+        if ch == chr(27):
           flag = True
-          ansi = "\x1b"
-          continue
+          buf = ""
+          timeout = 0
+        elif flag is True:
+          buf += ch
+          if buf in keys:
+            return keys[buf]
         else:
           return ch
-
-#        if noneok is True:
-#          return None
-
-      return ansi
   finally:
         termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
         fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
       # echo("{/all}", end="") # print ("\033[0m", end="")
 
-  return ch
+#  return ch
 
 # @see https://gist.github.com/sirpengi/5045885 2013-feb-27 in oftcphp sirpengi
 # @since 20140529
@@ -294,8 +306,8 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         kind = mo.lastgroup
         # print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
         # print("%r: " % (kind))
-        for g in range(1, len(mo.groups())+1):
-          print("%d: %s" % (g, mo.group(g)))
+#        for g in range(1, len(mo.groups())+1):
+#          print("%d: %s" % (g, mo.group(g)))
 
         value = mo.group()
         if kind == "WHITESPACE":
