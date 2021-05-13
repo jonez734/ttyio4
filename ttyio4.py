@@ -56,7 +56,7 @@ def getch(noneok:bool=False, timeout=0.250, echoch=False) -> str:
         if len(r) == 0 and noneok is True:
           break
 
-        echo("ttyio4.getch.120: flag=%r, buf=%r" % (flag, buf))
+#        echo("ttyio4.getch.120: flag=%r, buf=%r" % (flag, buf))
         ch = sys.stdin.read(1)
         if ch == chr(27):
           flag = True
@@ -360,6 +360,11 @@ def __tokenizemci(buf:str, args:object=Namespace()):
           else:
             value = None
           print("__tokenizemci.100: var=%r value=%r" % (var, value))
+        elif kind == "CUP":
+          pass
+        elif kind == "CDN":
+          pass
+
         yield Token(kind, value)
 
 def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, end:str="\n", args=Namespace()) -> str:
