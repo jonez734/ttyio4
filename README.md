@@ -11,14 +11,24 @@
 - [ ] pluggable mcicommand tables
 - [x] fix {f6:42} (prints a couple of newlines) (was using the wrong regexp group for the multiple)
 - [x] pick a bgcolor/color for level="debug" in echo()
-- handle arrow keys (\x1b[A, etc).. maybe ftell() will work?
+- handle arrow keys (\x1b[A, etc).. maybe ftell() will work? no, sys.stdin is not seekable
 - [ ] variables
+  * not recursive
   * setvariable(name, value) - set variable <name> to <value>
   * getvariable(name) - returns variables[name] if name exists, else None (which is also a valid value. only other option would be to raise an exception)
   * clearvariables() - resets the variables dict to empty
   * usage: {var:<name>} in echo()
-- [ ] how to handle hitting esc and returning KEY_ESC?
+- [ ] getch
+  * gets a single char using select/read
+  * since ~may 2021, working to add handling of cursor keys, backspace, home, end, ctrl-u.
+  * thought about trying ftell() to handle arrow keys, but sys.stdin is not seekable.
+  * settled on making a loop that reads one byte at a time, setting a flag when it's an esc, and then returning a string like 'KEY_CURSORDOWN', etc
+  * when handling backspace, it will not work to move the cursor left and erase to end-of-line (libreadline should be emulated). 
+  * solution is to backspace, print a space, then backspace again. also update the buffer.
+  * [ ] how to handle hitting esc and returning KEY_ESC while also handling cursor keys and home/end/etc?
+  * home, ctrl-a
+  * end, ctrl-e
 
 ## notes
 
-- order of patterns is critical. do not mess with it
+- order of patterns is critical. do not mess with it, else many code changes will be triggered
