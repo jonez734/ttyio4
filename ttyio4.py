@@ -19,7 +19,9 @@ keys = {
   "[6~": "KEY_PAGEDOWN",
   "[2~": "KEY_INS",
   "[3~": "KEY_DEL",
-  "OP": "KEY_F1"
+  "OP": "KEY_F1",
+  "OQ": "KEY_F2",
+  "OR": "KEY_F3"
 }
 
 # @see http://www.python.org/doc/faq/library.html#how-do-i-get-a-single-keypress-at-a-time
@@ -49,10 +51,11 @@ def getch(noneok:bool=False, timeout=0.250, echoch=False) -> str:
         try:
           r, w, x = select.select([fd], [], [], timeout)
         except socket.error as e:
-          echo("%r: %r" % (e.code, e.msg), level="error")
+          echo("%r: %r" % (e.code, e.msg), level="error", interpret=False)
           if e.args[0] == 4:
-            echo("interupted system call (tab switch?)")
+            echo("interupted system call (tab switch?)", level="warning")
             continue
+
         if len(r) == 0 and noneok is True:
           break
 
