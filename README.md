@@ -4,6 +4,7 @@
 
 - [writing a tokenizer](https://docs.python.org/3/library/re.html#writing-a-tokenizer) served as inspiration for the current generation lexer to handle mci commands.
 - [Build your own Command Line with ANSI escape codes](https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html)
+- 'readlike': python3-readlike-0.1.3-1.fc33.noarch.rpm 
 
 ## todo
 
@@ -19,7 +20,7 @@
   * clearvariables() - resets the variables dict to empty
   * usage: {var:<name>} in echo()
 - [ ] getch
-  * gets a single char using select/read
+  * gets a single char using select/read for async
   * since ~may 2021, working to add handling of cursor keys, backspace, home, end, ctrl-u.
   * thought about trying ftell() to handle arrow keys, but sys.stdin is not seekable.
   * settled on making a loop that reads one byte at a time, setting a flag when it's an esc, and then returning a string like 'KEY_CURSORDOWN', etc
@@ -28,6 +29,8 @@
   * [ ] how to handle hitting esc and returning KEY_ESC while also handling cursor keys and home/end/etc?
   * home, ctrl-a
   * end, ctrl-e
+  * [ ] on EOF, raise EOFError
+- [ ] performance of echo() (slow)
 
 ## notes
 
