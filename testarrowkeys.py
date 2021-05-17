@@ -31,10 +31,12 @@ while not done:
 #        ttyio.echo("pos=%r" % (pos))
         continue
     elif ch == chr(21): # ^u
+        ctrlu = ""
         while pos > 0:
-            ttyio.echo(chr(8)+" "+chr(8), flush=True, end="")
+            ctrlu += chr(8)+" "+chr(8)
             pos -= 1
         buf = ""
+        ttyio.echo(ctrlu, flush=True, end="")
         continue
     elif ch == "KEY_CURSORUP":
         pass
