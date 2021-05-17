@@ -617,7 +617,6 @@ def inputstring(prompt:str, oldvalue:str=None, **kw) -> str:
   except NameError:
     inputfunc = input
   
-
   args = kw["args"] if "args" in kw else Namespace()
 
   mask = kw["mask"] if "mask" in kw else None
