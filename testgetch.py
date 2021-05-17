@@ -19,8 +19,8 @@ def testinputchar():
     ttyio.echo("ch=%r" % (ch))
     
 try:
-    # test_pauseabort()
-    testinputchar()
+    test_pauseabort()
+    # testinputchar()
 except KeyboardInterrupt:
     ttyio.echo("INTR")
 except EOFError:
