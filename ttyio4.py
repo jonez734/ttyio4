@@ -670,7 +670,7 @@ def inputstring(prompt:str, oldvalue:str=None, **kw) -> str:
         echo(re.match(mask, buf), level="debug")
 
       if re.match(mask, buf) is None:
-        echo("{F6}{lightred}invalid input{/all}{F6}")
+        echo("{F6}invalid input{/all}", level="error")
         continue
 
     if multiple is True:
