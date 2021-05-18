@@ -35,3 +35,9 @@
 ## notes
 
 - order of patterns is critical. do not mess with it, else many code changes will be triggered
+- DECDWL/DECDHL (double height, double width) -- not supported by gnome-terminal (vte)
+  * https://gitlab.gnome.org/GNOME/vte/-/issues/195
+- for a specific app, need a way to find out the ascii value of the character under the cursor
+  * https://unix.stackexchange.com/questions/76742/is-it-possible-to-get-a-character-at-terminal-cursor-using-ansi-escape-codes
+  * mvinch() (ncurses)
+  * https://stackoverflow.com/questions/35961761/how-can-i-get-a-character-in-a-position-of-the-screen-with-ncurses-in-c
