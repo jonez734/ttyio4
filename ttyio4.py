@@ -300,6 +300,10 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         ("DECSTBM",    r'\{DECSTBM(:(\d{,3})(,(\d{,3}))?)?\}'),  # set top, bottom margin
         ("BELL",       r'\{BELL(:(\d{,2}))?\}'),
         ("VAR",	       r'\{VAR:([0-9a-zA-Z_.-]+)\}'),
+        ("CURSORUP",   r'\{CURSORUP(:(\d{,3}))?\}'),
+        ("CURSORRIGHT",r'\{CURSORRIGHT(:(\d{,3}))?\}'),
+        ("CURSORLEFT", r'\{CURSORLEFT(:(\d{,3}))?\}'),
+        ("CURSORDOWN", r'\{CURSORDOWN(:(\d{,3}))?\}'),
         ("COMMAND",    r'\{[^\}]+\}'),     # {red}, {brightyellow}, etc
         ("WORD",       r'[^ \t\n\{\}]+'),
         ('MISMATCH',   r'.')            # Any other pattern
@@ -308,7 +312,7 @@ def __tokenizemci(buf:str, args:object=Namespace()):
     for mo in re.finditer(tok_regex, buf, re.IGNORECASE):
         kind = mo.lastgroup
         # print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
-        # print("%r: " % (kind))
+# 	print("%r: " % (kind))
 #        for g in range(1, len(mo.groups())+1):
 #          print("%d: %s" % (g, mo.group(g)))
 
@@ -363,11 +367,19 @@ def __tokenizemci(buf:str, args:object=Namespace()):
           else:
             value = None
           print("__tokenizemci.100: var=%r value=%r" % (var, value))
-        elif kind == "CUP":
-          pass
-        elif kind == "CDN":
-          pass
-
+        elif kind == "CURSORUP":
+          repeat = mo.group(38) or 1
+          value = "\033[%sA" % (repeat)
+          print("cursorup %r" % (repeat))
+        elif kind == "CURSORRIGHT":
+          repeat = mo.group(41) or 1
+          print("cursorright:%r" % (repeat))
+        elif kind == "CURSORLEFT":
+          repeat = mo.group(44) or 1
+          print("cursorleft:%r" % (repeat))
+        elif kind == "CURSORDOWN":
+          repeat = mo.group(47) or 1
+          print("cursordown:%r" % (repeat))
         yield Token(kind, value)
 
 def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, end:str="\n", args=Namespace()) -> str:
@@ -445,6 +457,8 @@ def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, 
           char = acs[command.upper()]
           result += "\033(0%s\033(B" % (char*int(repeat))
           pos += len(char*int(repeat))
+      elif token.type == "CURSORUP":
+        result += "\033[%sA" % (repeat)
       elif token.type == "WORD":
         if wordwrap is True:
           if pos+len(token.value) >= width-1:
@@ -502,7 +516,7 @@ def getcursorposition():
   newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
   termios.tcsetattr(fd, termios.TCSANOW, newattr)
 
-  echo("\033[6n")
+  echo("\033[6n", end="", flush=True)
   buf = ""
   try:
     for x in range(0,10):
@@ -516,7 +530,7 @@ def getcursorposition():
     fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
 
 #  echo("buf=%r" % (buf))
-  m = re.search(r'\033\[(\d{,3});(\d{,3})R', buf)
+  m = re.search(r'\033\[(\d{,4});(\d{,4})R', buf)
 #  echo("m=%r" % (m))
 #  for x in range(1, len(m.groups())+1):
 #    echo("x=%r, val=%r" % (x, m.group(x)))
