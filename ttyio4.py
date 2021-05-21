@@ -493,6 +493,39 @@ def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, date
     sys.stdout.flush()
   return
 
+def getcursorposition():
+  fd = sys.stdin.fileno()
+  oldtermios = termios.tcgetattr(fd)
+  oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
+
+  newattr = termios.tcgetattr(fd)
+  newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
+  termios.tcsetattr(fd, termios.TCSANOW, newattr)
+
+  echo("\033[6n")
+  buf = ""
+  try:
+    for x in range(0,10):
+      ch = sys.stdin.read(1)
+#      echo("ch=%r" % (ch))
+      buf += ch
+      if ch == "R":
+        break
+  finally:
+    termios.tcsetattr(fd, termios.TCSAFLUSH, oldtermios)
+    fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
+
+#  echo("buf=%r" % (buf))
+  m = re.search(r'\033\[(\d{,3});(\d{,3})R', buf)
+#  echo("m=%r" % (m))
+#  for x in range(1, len(m.groups())+1):
+#    echo("x=%r, val=%r" % (x, m.group(x)))
+  row, column = m.group(1), m.group(2)
+#  echo("row=%r, column=%r" % (row, column))
+#  echo(m.groups(), interpret=False)
+
+  return (row, column)
+
 # http://www.brandonrubin.me/2014/03/18/python-snippet-get-terminal-width/
 # https://www.programcreek.com/python/example/1922/termios.TIOCGWINSZ
 def getterminalwidth():
@@ -737,6 +770,7 @@ def detectansi():
     return False
 
   stdinfd = sys.stdin.fileno()
+  stdoutfd = sys.stdout.fileno()
 
   oldtermios = termios.tcgetattr(stdinfd)
   oldflags = fcntl.fcntl(stdinfd, fcntl.F_GETFL)
@@ -747,19 +781,25 @@ def detectansi():
 
   # fcntl.fcntl(stdinfd, fcntl.F_SETFL, oldflags)
 
-  os.write(sys.stdout.fileno(), b"\033[6n")
+  echo("\033[5n")
 
+  buf = ""
   try:
-    res = False
-    for x in range(0, 8):
-      ch = os.read(stdinfd, 1)
-      if ch == b"\033":
-        res = True
+    for x in range(0, 4):
+      ch = sys.stdin.read(1)
+      buf += ch
+      if ch == "n":
         break
   finally:
     termios.tcsetattr(stdinfd, termios.TCSAFLUSH, oldtermios)
     fcntl.fcntl(stdinfd, fcntl.F_SETFL, oldflags)
-  return res
+#  echo("buf=%r" % (buf))
+  if buf == "\x1b[0n":
+    return True
+  elif buf == "\x1b[3n":
+    return False
+  else:
+    return None
 
 # @since 20201013
 class genericInputCompleter(object):
