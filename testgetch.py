@@ -18,6 +18,9 @@ while not done:
     elif ch == "\004":
         ttyio.echo("{/all}EOF")
         break
+    elif ch == "\007":
+        ttyio.echo("{bell}", end="", flush=True)
+        continue
     elif ch == chr(127):
         ttyio.echo(ch, flush=True, end="")
 #        ttyio.echo("backspace, pos=%d" % (pos))
@@ -32,15 +35,19 @@ while not done:
         continue
     elif ch == chr(21): # ^u
         ctrlu = ""
-        while pos > 0:
+        while pos >= 0:
             ctrlu += chr(8)+" "+chr(8)
             pos -= 1
         buf = ""
         ttyio.echo(ctrlu, flush=True, end="")
         continue
-    elif ch == "KEY_CURSORUP":
+    elif ch == "KEY_UP":
         pass
-    elif ch == "KEY_CURSORDOWN":
+    elif ch == "KEY_DOWN":
+        pass
+    elif ch == "KEY_HOME":
+        pass
+    elif ch == "KEY_END":
         pass
 
     if len(ch) == 1:
