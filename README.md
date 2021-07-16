@@ -13,7 +13,7 @@
 - [ ] pluggable mcicommand tables
 - [x] fix {f6:42} (prints a couple of newlines) (was using the wrong regexp group for the multiple)
 - [x] pick a bgcolor/color for level="debug" in echo()
-- handle arrow keys (\x1b[A, etc).. maybe ftell() will work? no, sys.stdin is not seekable
+- [x] handle arrow keys (\x1b[A, etc).. maybe ftell() will work? no, sys.stdin is not seekable
 - [ ] variables
   * not recursive
   * setvariable(name, value) - set variable <name> to <value>
@@ -27,26 +27,26 @@
   * settled on making a loop that reads one byte at a time, setting a flag when it's an esc, and then returning a string like 'KEY_CURSORDOWN', etc
   * when handling backspace, it will not work to move the cursor left and erase to end-of-line (libreadline should be emulated). 
   * solution is to backspace, print a space, then backspace again. also update the buffer.
-  * [ ] how to handle hitting esc and returning KEY_ESC while also handling cursor keys and home/end/etc?
+  * [ ] handle hitting esc and returning KEY_ESC while also handling cursor keys and home/end/etc?
   * home, ctrl-a
   * end, ctrl-e
   * [ ] on EOF, raise EOFError
-- [ ] slow performance of echo()
-- [ ] getch() does not do well when using a key (like F5) that has not been placed into a table. ctrl-c is required.
+- [x] slow performance of echo()
+- [x] getch() does not do well when using a key (like F5) that has not been placed into a table. ctrl-c is required.
 - [ ] plus/4 palette: https://en.wikipedia.org/wiki/MOS_Technology_TED needs rgb values.
 - [x] change inputboolean() so that "YN" is the default set of options (instead of YNTF)
 - [x] ctrl-u stops at pos=1 instead of 0
-- [ ] add {wait:<seconds>} aka \w<seconds> in imagebbs
-- [ ] adjust {wait} to use 0.250 seconds instead of 1.00
+- [x] add {wait:<seconds>} aka \w<seconds> in imagebbs
+- [x] adjust {wait} to use 0.250 seconds instead of 1.00
 - [x] add handling for card suits (code page 437). https://en.wikipedia.org/wiki/Code_page_437
 - [ ] https://en.wikipedia.org/wiki/File:VTTEST-doublesize.png
 - [ ] move collapselist() to bbsengine5
-- [ ] handle unicode strings (emojis)
- * '\U0001xxxx' is the key (cap U, prefix w three 0s)
+- [ ] handle unicode strings (emojis, box characters, card suits)
+ * '\U0001xxxx' is the key (cap U, prefix with three 0s)
  * https://stackoverflow.com/questions/3220031/how-to-filter-or-replace-unicode-characters-that-would-take-more-than-3-bytes
  * https://en.wikipedia.org/wiki/Emoticons_(Unicode_block)
  * https://medium.com/analytics-vidhya/how-to-print-emojis-using-python-2e4f93443f7e
-[ ] if there is a syntax error in an emoji (the "100" failed, since regexp did not allow 0-9), following emojis will not resolve.
+[ ] if no pattern matches in echo(), 'mismatch' takes over and displays the command and all following commands as plain text
 
 ## notes
 
