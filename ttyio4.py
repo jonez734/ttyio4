@@ -5,28 +5,81 @@ import select
 import socket
 import re
 
+from datetime import datetime
+from time import strftime
+
+from dateutil.tz import *
+
 from typing import Any, List, NamedTuple
 from argparse import Namespace
 
 keys = {
-  "[A": "KEY_CURSORUP",
-  "[B": "KEY_CURSORDOWN",
-  "[C": "KEY_CURSORRIGHT",
-  "[D": "KEY_CURSORLEFT",
-  "[H": "KEY_HOME",
-  "[F": "KEY_END",
-  "[5~": "KEY_PAGEUP",
-  "[6~": "KEY_PAGEDOWN",
-  "[2~": "KEY_INS",
-  "[3~": "KEY_DEL",
-  "OP": "KEY_F1",
-  "OQ": "KEY_F2",
-  "OR": "KEY_F3"
+  "[A":   "KEY_UP",
+  "[B":   "KEY_DOWN",
+  "[C":   "KEY_RIGHT",
+  "[D":   "KEY_LEFT",
+  "[H":   "KEY_HOME",
+  "[F":   "KEY_END",
+  "[5~":  "KEY_PAGEUP",
+  "[6~":  "KEY_PAGEDOWN",
+  "[2~":  "KEY_INS",
+  "[3~":  "KEY_DEL",
+  "OP":   "KEY_F1",
+  "OQ":   "KEY_F2",
+  "OR":   "KEY_F3",
+  "OS":   "KEY_F4",
+  "[15~": "KEY_F5"
+}
+
+unicode = {
+  "HEART":       "\u2665",
+  "DIAMOND":     "\u2666",
+  "CLUB":        "\u2663",
+  "SPADE":       "\u2660",
+  "LIGHTSHADE":  "\u2591",
+  "MEDIUMSHADE": "\u2592",
+  "DARKSHADE":   "\u2593",
+  "SOLIDBLOCK":  "\u2588",
+  "SV":          "\u2502",
+  "SVSL":        "\u2524",
+  "DVDL":        "\u2563",
+  "DVDR":	 "\u2560",
+  "DV":          "\u2551",
+  "DRDVCORNER":  "\u2554",
+  "DHLINE":      "\u2550",
+  "DLDVCORNER":  "\u2557",
+  "DVLINE":      "\u2551",
+  "DVDRCORNER":	 "\u255a",
+  "DVDLCORNER":  "\u255d",
+  "DVDHRTEE":    "\u2560",
+  "DVDHLTEE":    "\u2563",
+  "DVSHRTEE":    "\u255F",
+  "DVSHLTEE":	 "\u2562",
+  "SVDHCROSS":   "\u256A",
+  "SVSHCROSS":   "\u253C",
+  "DVSHCROSS":   "\u256B",
+  "DVDHCROSS":   "\u256C",
+}
+
+# https://stackoverflow.com/questions/3220031/how-to-filter-or-replace-unicode-characters-that-would-take-more-than-3-bytes
+# https://medium.com/analytics-vidhya/how-to-print-emojis-using-python-2e4f93443f7e
+emoji = {
+  "grin":       "\U0001F600",
+  "smile":      "\U0001f642",
+  "rofl":       "\U0001f923",
+  "wink":       "\U0001f609",
+  "thinking":   "\U0001f914",
+  "sunglasses": "\U0001f60e",
+  "100":        "\U0001f4af",
+  "thumbup":    "\U0001f44d",
+  "thumbdown":  "\U0001f44e",
+  "vulcan":     "\U0001f596",
+  "spiral":     "\U0001f4ab",
 }
 
 # @see http://www.python.org/doc/faq/library.html#how-do-i-get-a-single-keypress-at-a-time
 # @see http://craftsman-hambs.blogspot.com/2009/11/getch-in-python-read-character-without.html
-def getch(noneok:bool=False, timeout=0.250, echoch=False) -> str:
+def getch(noneok:bool=False, timeout=0.000125, echoch=False) -> str:
   fd = sys.stdin.fileno()
 
   oldterm = termios.tcgetattr(fd)
@@ -61,14 +114,25 @@ def getch(noneok:bool=False, timeout=0.250, echoch=False) -> str:
 
 #        echo("ttyio4.getch.120: flag=%r, buf=%r" % (flag, buf))
         ch = sys.stdin.read(1)
-        if ch == chr(27):
+#        return ch
+
+        if ch == chr(1): # ctrl-a
+          return "KEY_HOME"
+        elif ch == chr(5): # ctrl-e
+          return "KEY_END"
+        elif ch == chr(27):
           flag = True
           buf = ""
-          timeout = 0
+#          timeout = 0.00125
         elif flag is True:
           buf += ch
           if buf in keys:
             return keys[buf]
+          else:
+            if len(buf) >= 4:
+              echo("buf=%r, len=%d" % (buf, len(buf)), level="debug")
+              flag = False
+              buf = ""
         else:
           return ch
   finally:
@@ -77,24 +141,6 @@ def getch(noneok:bool=False, timeout=0.250, echoch=False) -> str:
       # echo("{/all}", end="") # print ("\033[0m", end="")
 
 #  return ch
-
-# @see https://gist.github.com/sirpengi/5045885 2013-feb-27 in oftcphp sirpengi
-# @since 20140529
-# @since 20200719
-def collapselist(lst):
-    def chunk(lst):
-        ret = [lst[0],]
-        for i in lst[1:]:
-            if ord(i) == ord(ret[-1]) + 1:
-                pass
-            else:
-                yield ret
-                ret = []
-            ret.append(i)
-        yield ret
-    chunked = chunk(lst)
-    ranges = ((min(l), max(l)) for l in chunked)
-    return ", ".join("{0}-{1}".format(*l) if l[0] != l[1] else l[0] for l in ranges)
 
 # @since 20201105
 def inputchar(prompt:str, options:str, default:str="", args:object=Namespace(), noneok:bool=False, echoch=False) -> str:
@@ -234,31 +280,31 @@ mcicommands = (
 )
 
 acs = {
-        "ULCORNER":"l",
-        "LLCORNER":"m",
-        "URCORNER":"k",
-        "LRCORNER":"j",
-        "LTEE":    "t",
-        "RTEE":    "u",
-        "BTEE":    "v",
-        "TTEE":    "w",
-        "HLINE":   "q",
-        "VLINE":   "x",
-        "PLUS":    "n",
-        "S1":      "o",
-        "S9":      "s",
-        "DIAMOND": "`",
-        "CKBOARD": "a",
-        "DEGREE":  "f",
-        "PLMINUS": "g",
-        "BULLET":  "~",
-        "LARROW":  ",",
-        "RARROW":  "+",
-        "DARROW":  ".",
-        "UARROW":  "-",
-        "BOARD":   "h",
-        "LANTERN": "i",
-        "BLOCK":   "0"
+  "ULCORNER":"l",
+  "LLCORNER":"m",
+  "URCORNER":"k",
+  "LRCORNER":"j",
+  "LTEE":    "t",
+  "RTEE":    "u",
+  "BTEE":    "v",
+  "TTEE":    "w",
+  "HLINE":   "q",
+  "VLINE":   "x",
+  "PLUS":    "n",
+  "S1":      "o",
+  "S9":      "s",
+  "DIAMOND": "`",
+  "CKBOARD": "a",
+  "DEGREE":  "f",
+  "PLMINUS": "g",
+  "BULLET":  "~",
+  "LARROW":  ",",
+  "RARROW":  "+",
+  "DARROW":  ".",
+  "UARROW":  "-",
+  "BOARD":   "h",
+  "LANTERN": "i",
+  "BLOCK":   "0",
 }
 
 variables = {}
@@ -304,6 +350,9 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         ("CURSORRIGHT",r'\{CURSORRIGHT(:(\d{,3}))?\}'),
         ("CURSORLEFT", r'\{CURSORLEFT(:(\d{,3}))?\}'),
         ("CURSORDOWN", r'\{CURSORDOWN(:(\d{,3}))?\}'),
+        ("WAIT",       r'\{WAIT:(\d)\}'),
+        ("UNICODE",    r'\{UNICODE:([a-z]+)(:([0-9]{,3}))?\}'),
+        ("EMOJI",      r':([a-zA-Z0-9 -]+):'),
         ("COMMAND",    r'\{[^\}]+\}'),     # {red}, {brightyellow}, etc
         ("WORD",       r'[^ \t\n\{\}]+'),
         ('MISMATCH',   r'.')            # Any other pattern
@@ -311,8 +360,8 @@ def __tokenizemci(buf:str, args:object=Namespace()):
     tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
     for mo in re.finditer(tok_regex, buf, re.IGNORECASE):
         kind = mo.lastgroup
-        # print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
-# 	print("%r: " % (kind))
+#        print("kind=%r mo.groups()=%r" % (kind, mo.groups()))
+#        print("%r: " % (kind))
 #        for g in range(1, len(mo.groups())+1):
 #          print("%d: %s" % (g, mo.group(g)))
 
@@ -368,18 +417,22 @@ def __tokenizemci(buf:str, args:object=Namespace()):
             value = None
           print("__tokenizemci.100: var=%r value=%r" % (var, value))
         elif kind == "CURSORUP":
-          repeat = mo.group(38) or 1
-          value = "\033[%sA" % (repeat)
-          print("cursorup %r" % (repeat))
+          value = mo.group(38) or 1 # \x1b[<repeat>A
         elif kind == "CURSORRIGHT":
-          repeat = mo.group(41) or 1
-          print("cursorright:%r" % (repeat))
+          value = mo.group(41) or 1
         elif kind == "CURSORLEFT":
-          repeat = mo.group(44) or 1
-          print("cursorleft:%r" % (repeat))
+          value = mo.group(44) or 1
         elif kind == "CURSORDOWN":
-          repeat = mo.group(47) or 1
-          print("cursordown:%r" % (repeat))
+          value = mo.group(47) or 1
+        elif kind == "WAIT":
+          value = int(mo.group(49) or 1)
+        elif kind == "UNICODE":
+          name = mo.group(51)
+          repeat = mo.group(53) or 1
+#          print("unicode.100: repeat=%r" % (repeat))
+          value = (name, int(repeat))
+        elif kind == "EMOJI":
+          value = mo.group(55)
         yield Token(kind, value)
 
 def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, end:str="\n", args=Namespace()) -> str:
@@ -458,7 +511,31 @@ def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, 
           result += "\033(0%s\033(B" % (char*int(repeat))
           pos += len(char*int(repeat))
       elif token.type == "CURSORUP":
-        result += "\033[%sA" % (repeat)
+        repeat = int(token.value)
+        result += "\033[%dA" % (repeat)
+      elif token.type == "CURSORDOWN":
+        repeat = int(token.value)
+        result += "\033[%dB" % (repeat)
+      elif token.type == "CURSORRIGHT":
+        repeat = int(token.value)
+        result += "\033[%dC" % (repeat)
+      elif token.type == "CURSORLEFT":
+        repeat = int(token.value)
+        result += "\033[%dD" % (repeat)
+      elif token.type == "WAIT":
+        duration = int(token.value)
+#        echo("duration=%r" % (duration))
+        time.sleep(duration*0.250)
+      elif token.type == "UNICODE":
+        (name, repeat) = token.value
+        name = name.upper()
+#        print("name=%s repeat=%s" % (name, repeat))
+        if name in unicode:
+          result += unicode[name]*repeat
+      elif token.type == "EMOJI":
+        name = token.value
+        if name in emoji:
+          result += emoji[name]
       elif token.type == "WORD":
         if wordwrap is True:
           if pos+len(token.value) >= width-1:
@@ -717,7 +794,7 @@ def inputstring(prompt:str, oldvalue:str=None, **kw) -> str:
         echo(re.match(mask, buf), level="debug")
 
       if re.match(mask, buf) is None:
-        echo("{F6}invalid input{/all}", level="error")
+        echo("invalid input", level="error")
         continue
 
     if multiple is True:
@@ -767,7 +844,7 @@ def inputstring(prompt:str, oldvalue:str=None, **kw) -> str:
   return result
 
 # @see https://stackoverflow.com/a/53981846
-def readablelist(seq: List[Any], sepcolor:str="", itemcolor:str="") -> str:
+def oxfordcomma(seq: List[Any], sepcolor:str="", itemcolor:str="") -> str:
     """Return a grammatically correct human readable string (with an Oxford comma)."""
     seq = [str(s) for s in seq]
 
@@ -777,6 +854,7 @@ def readablelist(seq: List[Any], sepcolor:str="", itemcolor:str="") -> str:
 
     buf = "%s, %s" % (sepcolor, itemcolor)
     return itemcolor+buf.join(seq[:-1]) + '%s, and %s' % (sepcolor, itemcolor) + seq[-1]
+readablelist = oxfordcomma
 
 # @since 20200917
 def detectansi():
@@ -808,9 +886,9 @@ def detectansi():
     termios.tcsetattr(stdinfd, termios.TCSAFLUSH, oldtermios)
     fcntl.fcntl(stdinfd, fcntl.F_SETFL, oldflags)
 #  echo("buf=%r" % (buf))
-  if buf == "\x1b[0n":
+  if buf == "\033[0n":
     return True
-  elif buf == "\x1b[3n":
+  elif buf == "\033[3n":
     return False
   else:
     return None
@@ -859,7 +937,7 @@ class genericInputCompleter(object):
     return self.matches[state]
 
 # @since 20210203
-def inputboolean(prompt:str, default:str=None, options="YNTF") -> bool:
+def inputboolean(prompt:str, default:str=None, options="YN") -> bool:
   ch = inputchar(prompt, options, default)
   if ch is not None:
     ch = ch.upper()
