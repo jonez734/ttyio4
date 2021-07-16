@@ -5,6 +5,7 @@
 - [writing a tokenizer](https://docs.python.org/3/library/re.html#writing-a-tokenizer) served as inspiration for the current generation lexer to handle mci commands.
 - [Build your own Command Line with ANSI escape codes](https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html)
 - 'readlike': python3-readlike-0.1.3-1.fc33.noarch.rpm 
+- http://www.cse.psu.edu/~kxc104/class/cse472/09f/hw/hw7/vt100ansi.htm
 
 ## todo
 
@@ -30,14 +31,45 @@
   * home, ctrl-a
   * end, ctrl-e
   * [ ] on EOF, raise EOFError
-- [ ] performance of echo() (slow)
+- [ ] slow performance of echo()
+- [ ] getch() does not do well when using a key (like F5) that has not been placed into a table. ctrl-c is required.
+- [ ] plus/4 palette: https://en.wikipedia.org/wiki/MOS_Technology_TED needs rgb values.
+- [x] change inputboolean() so that "YN" is the default set of options (instead of YNTF)
+- [x] ctrl-u stops at pos=1 instead of 0
+- [ ] add {wait:<seconds>} aka \w<seconds> in imagebbs
+- [ ] adjust {wait} to use 0.250 seconds instead of 1.00
+- [x] add handling for card suits (code page 437). https://en.wikipedia.org/wiki/Code_page_437
+- [ ] https://en.wikipedia.org/wiki/File:VTTEST-doublesize.png
+- [ ] move collapselist() to bbsengine5
+- [ ] handle unicode strings (emojis)
+ * '\U0001xxxx' is the key (cap U, prefix w three 0s)
+ * https://stackoverflow.com/questions/3220031/how-to-filter-or-replace-unicode-characters-that-would-take-more-than-3-bytes
+ * https://en.wikipedia.org/wiki/Emoticons_(Unicode_block)
+ * https://medium.com/analytics-vidhya/how-to-print-emojis-using-python-2e4f93443f7e
+[ ] if there is a syntax error in an emoji (the "100" failed, since regexp did not allow 0-9), following emojis will not resolve.
 
 ## notes
 
 - order of patterns is critical. do not mess with it, else many code changes will be triggered
 - DECDWL/DECDHL (double height, double width) -- not supported by gnome-terminal (vte)
   * https://gitlab.gnome.org/GNOME/vte/-/issues/195
+  * https://gitlab.freedesktop.org/terminal-wg/specifications/-/issues/9
+  * konsole (kde) does double height, but not double width.
+  * perhaps set up an echo/read loop similar to detecting ansi that can figure out if double height is supported.
+  * https://en.wikipedia.org/wiki/ANSI_escape_code#Terminal_input_sequences
+  * https://stackoverflow.com/questions/3470106/printing-double-size-characters-with-ncurses
+
 - for a specific app, need a way to find out the ascii value of the character under the cursor
   * https://unix.stackexchange.com/questions/76742/is-it-possible-to-get-a-character-at-terminal-cursor-using-ansi-escape-codes
   * mvinch() (ncurses)
   * https://stackoverflow.com/questions/35961761/how-can-i-get-a-character-in-a-position-of-the-screen-with-ncurses-in-c
+- https://unix.stackexchange.com/questions/255707/what-are-the-keyboard-shortcuts-for-the-command-line/255735 --- list of editing shortcuts
+
+- figure out max length of the buffer, check to see if buf is that length, and if there has not been a match, reset flag and buffer. ty pscug 20210627
+- check for failure. if I am at maxlength of buffer, and the lookup fails, reset buffer and flag.
+- watch for escape sequences I care about from a table and ignore the seq that are not interesting.
+- code page 437
+  * https://en.wikipedia.org/wiki/Code_page_437
+  * https://www.google.com/search?q=linux+how+do+I+enter+unicode+characters+from+a+different+page&oq=linux+how+do+I+enter+unicode+characters+from+a+different+page&aqs=chrome..69i57.10027j0j7&sourceid=chrome&ie=UTF-8
+  * https://www.ascii-codes.com/
+  * https://www.google.com/search?q=code+page+437+names&oq=code+page+437+names&aqs=chrome.0.69i59.3385j0j7&sourceid=chrome&ie=UTF-8
