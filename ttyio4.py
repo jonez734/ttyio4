@@ -351,7 +351,7 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         ("CURSORLEFT", r'\{CURSORLEFT(:(\d{,3}))?\}'),
         ("CURSORDOWN", r'\{CURSORDOWN(:(\d{,3}))?\}'),
         ("WAIT",       r'\{WAIT:(\d)\}'),
-        ("UNICODE",    r'\{UNICODE:([a-z]+)(:([0-9]{,3}))?\}'),
+        ("UNICODE",    r'\{(U|UNICODE):([a-z]+)(:([0-9]{,3}))?\}'),
         ("EMOJI",      r':([a-zA-Z0-9 -]+):'),
         ("COMMAND",    r'\{[^\}]+\}'),     # {red}, {brightyellow}, etc
         ("WORD",       r'[^ \t\n\{\}]+'),
@@ -427,12 +427,12 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         elif kind == "WAIT":
           value = int(mo.group(49) or 1)
         elif kind == "UNICODE":
-          name = mo.group(51)
-          repeat = mo.group(53) or 1
-#          print("unicode.100: repeat=%r" % (repeat))
+          name = mo.group(52)
+          repeat = mo.group(54) or 1
+#          print("unicode.100: name=%s repeat=%r" % (name, repeat))
           value = (name, int(repeat))
         elif kind == "EMOJI":
-          value = mo.group(55)
+          value = mo.group(56)
         yield Token(kind, value)
 
 def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, end:str="\n", args=Namespace()) -> str:
