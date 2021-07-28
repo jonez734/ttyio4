@@ -32,24 +32,27 @@ keys = {
 }
 
 unicode = {
-  "HEART":       "\u2665",
-  "DIAMOND":     "\u2666",
-  "CLUB":        "\u2663",
-  "SPADE":       "\u2660",
-  "LIGHTSHADE":  "\u2591",
-  "MEDIUMSHADE": "\u2592",
-  "DARKSHADE":   "\u2593",
-  "SOLIDBLOCK":  "\u2588",
-  "SV":          "\u2502",
-  "SVSL":        "\u2524",
-  "DVDL":        "\u2563",
-  "DVDR":	 "\u2560",
-  "DV":          "\u2551",
-  "DRDVCORNER":  "\u2554",
-  "DHLINE":      "\u2550",
-  "DLDVCORNER":  "\u2557",
-  "DVLINE":      "\u2551",
-  "DVDRCORNER":	 "\u255a",
+  "HEART":           "\u2665",
+  "DIAMOND":         "\u2666",
+  "CLUB":            "\u2663",
+  "SPADE":           "\u2660",
+  "LIGHTSHADE":      "\u2591",
+  "MEDIUMSHADE":     "\u2592",
+  "DARKSHADE":       "\u2593",
+  "SOLIDBLOCK":      "\u2588",
+  "BLOCKUPPERHALF":  "\u2580",
+  "BLOCKLEFTHALF":   "\u258C",
+  "BLOCKCORNER":     "\u25A0",
+  "SV":              "\u2502",
+  "SVSL":            "\u2524",
+  "DVDL":            "\u2563",
+  "DVDR":	     "\u2560",
+  "DV":              "\u2551",
+  "DRDVCORNER":      "\u2554",
+  "DHLINE":          "\u2550",
+  "DLDVCORNER":      "\u2557",
+  "DVLINE":          "\u2551",
+  "DVDRCORNER":	     "\u255a",
   "DVDLCORNER":  "\u255d",
   "DVDHRTEE":    "\u2560",
   "DVDHLTEE":    "\u2563",
@@ -130,7 +133,8 @@ def getch(noneok:bool=False, timeout=0.000125, echoch=False) -> str:
             return keys[buf]
           else:
             if len(buf) >= 4:
-              echo("buf=%r, len=%d" % (buf, len(buf)), level="debug")
+              echo("{bell}", end="", flush=True)
+              # echo("buf=%r, len=%d" % (buf, len(buf)), level="debug")
               flag = False
               buf = ""
         else:
@@ -662,46 +666,46 @@ def xtname(name):
   echo("\033]0;%s\007" % (name))
   return
 
-def handlemenu(args, title, items, oldrecord, currecord, prompt="option", defaulthotkey=""):
-    hotkeys = {}
-
-    hotkeystr = ""
-
-    for item in items:
-        label = item["label"].lower()
-        hotkey = item["hotkey"].lower() if item.has_key("hotkey") else None
+#def handlemenu(args, title, items, oldrecord, currecord, prompt="option", defaulthotkey=""):
+#    hotkeys = {}
+#
+#    hotkeystr = ""
+#
+#    for item in items:
+#        label = item["label"].lower()
+#        hotkey = item["hotkey"].lower() if item.has_key("hotkey") else None
 #        ttyio.echo("hotkey=%s" % (hotkey), level="debug")
-        if hotkey is not None and hotkey in label:
-            label = label.replace(hotkey.lower(), "[{cyan}%s{/cyan}]" % (hotkey.upper()), 1)
-        else:
-            label = "[{cyan}%s{/cyan}] %s" % (hotkey, label)
-        if item.has_key("key"):
-            key = item["key"]
-            if oldrecord[key] != currecord[key]:
-                buf = "%s: %s (was %s)" % (label, currecord[key], oldrecord[key])
-            else:
-                buf = "%s: %s" % (label, currecord[key])
-        else:
-            buf = label
-        
-        hotkeys[hotkey] = item # ["longlabel"] if item.has_key("longlabel") else None
-        if hotkey is not None:
-            hotkeystr += hotkey
-        echo(buf,datestamp=False)
-    
-    if currecord != oldrecord:
-      echo("{yellow}** NEEDS SAVE **{/yellow}", datestamp=False)
-    
-    echo()
-  
-    ch = accept(prompt, hotkeystr, defaulthotkey)
-    ch = ch.lower()
-    longlabel = hotkeys[ch]["longlabel"] if hotkeys[ch].has_key("longlabel") else None
-    if longlabel is not None:
-        echo("{cyan}%s{/cyan} -- %s" % (ch.upper(), longlabel), datestamp=False)
-    else:
-        echo("{cyan}%s{/cyan}" % (ch.upper()), datestamp=False)
-    return hotkeys[ch]
+#        if hotkey is not None and hotkey in label:
+#            label = label.replace(hotkey.lower(), "[{cyan}%s{/cyan}]" % (hotkey.upper()), 1)
+#        else:
+#            label = "[{cyan}%s{/cyan}] %s" % (hotkey, label)
+#        if item.has_key("key"):
+#            key = item["key"]
+#            if oldrecord[key] != currecord[key]:
+#                buf = "%s: %s (was %s)" % (label, currecord[key], oldrecord[key])
+#            else:
+#                buf = "%s: %s" % (label, currecord[key])
+#        else:
+#            buf = label
+#
+#        hotkeys[hotkey] = item # ["longlabel"] if item.has_key("longlabel") else None
+#        if hotkey is not None:
+#            hotkeystr += hotkey
+#        echo(buf,datestamp=False)
+#
+#    if currecord != oldrecord:
+#      echo("{yellow}** NEEDS SAVE **{/yellow}", datestamp=False)
+#
+#    echo()
+#
+#    ch = accept(prompt, hotkeystr, defaulthotkey)
+#    ch = ch.lower()
+#    longlabel = hotkeys[ch]["longlabel"] if hotkeys[ch].has_key("longlabel") else None
+#    if longlabel is not None:
+#        echo("{cyan}%s{/cyan} -- %s" % (ch.upper(), longlabel), datestamp=False)
+#    else:
+#        echo("{cyan}%s{/cyan}" % (ch.upper()), datestamp=False)
+#    return hotkeys[ch]
 
   
 # @see https://stackoverflow.com/questions/9043551/regex-that-matches-integers-only
