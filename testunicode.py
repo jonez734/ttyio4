@@ -8,7 +8,8 @@ def main():
     ttyio.echo("{u:dvline}          {u:dvline}")
     ttyio.echo("{u:dvdhrtee}{u:dhline:10}{u:dvdhltee}")
     ttyio.echo("{u:dvshrtee}{acs:hline:10}{u:dvshltee}")
-    ttyio.echo("{unicode:dvdrcorner}{u:dhline:10}{u:dvdlcorner}") # {unicode:dvdhcross}")
+    ttyio.echo("{unicode:dvdrcorner}{u:dhline:10}{u:dvdlcorner}{bggray}x") # {unicode:dvdhcross}")
+    ttyio.echo("{/all}")
     return
 
 if __name__ == "__main__":
