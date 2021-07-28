@@ -321,7 +321,7 @@ def setvariable(name:str, value):
 def getvariable(name:str):
   if name in variables:
     return variables[name]
-  return None
+  return "NOTFOUND"
 
 def clearvariables():
   variables = {}
@@ -415,11 +415,8 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         elif kind == "VAR":
           # echo("var! mo.groups=%r" % (repr(mo.groups())), level="debug", interpret=False)
           var = mo.group(35)
-          if var in variables:
-            value = variables[var]
-          else:
-            value = None
-          print("__tokenizemci.100: var=%r value=%r" % (var, value))
+          value = getvariable(var)
+          # print("__tokenizemci.100: var=%r value=%r" % (var, value))
         elif kind == "CURSORUP":
           value = mo.group(38) or 1 # \x1b[<repeat>A
         elif kind == "CURSORRIGHT":
@@ -555,7 +552,9 @@ def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, 
         result += token.value
         pos += 1
       elif token.type == "VAR":
-        pass
+        v = str(token.value)
+        result += v
+        pos += len(v)
 
   return result
 
