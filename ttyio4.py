@@ -186,7 +186,7 @@ def inputchar(prompt:str, options:str, default:str="", args:object=Namespace(), 
 
 def accept(prompt:str, options:str, default:str="", debug:bool=False) -> str:
   if debug is True:
-    echo("ttyio3.accept.100: options=%s" % (options), level="debug")
+    echo("ttyio4.accept.100: options=%s" % (options), level="debug")
         
   default = default.upper() if default is not None else ""
   options = options.upper()
@@ -556,16 +556,6 @@ def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, 
       elif token.type == "OPENBRACE" or token.type == "CLOSEBRACE":
         result += token.value
         pos += 1
-      elif token.type == "VAR":
-        pass
-        # put the contents of the {var} into the buffer at the location, and move along. do not call interpretmci().
-        # print("interpretmci.100: token.value=%r" % (str(token.value)))
-        #v = str(token.value)
-        #result += v
-        # print("interpretmci.120: result=%r" % (result))
-        #if wordwrap is True:
-        #  pos += len(v)
-
   return result
 
 # copied from bbsengine.py
@@ -677,48 +667,6 @@ def xtname(name):
   echo("\033]0;%s\007" % (name))
   return
 
-#def handlemenu(args, title, items, oldrecord, currecord, prompt="option", defaulthotkey=""):
-#    hotkeys = {}
-#
-#    hotkeystr = ""
-#
-#    for item in items:
-#        label = item["label"].lower()
-#        hotkey = item["hotkey"].lower() if item.has_key("hotkey") else None
-#        ttyio.echo("hotkey=%s" % (hotkey), level="debug")
-#        if hotkey is not None and hotkey in label:
-#            label = label.replace(hotkey.lower(), "[{cyan}%s{/cyan}]" % (hotkey.upper()), 1)
-#        else:
-#            label = "[{cyan}%s{/cyan}] %s" % (hotkey, label)
-#        if item.has_key("key"):
-#            key = item["key"]
-#            if oldrecord[key] != currecord[key]:
-#                buf = "%s: %s (was %s)" % (label, currecord[key], oldrecord[key])
-#            else:
-#                buf = "%s: %s" % (label, currecord[key])
-#        else:
-#            buf = label
-#
-#        hotkeys[hotkey] = item # ["longlabel"] if item.has_key("longlabel") else None
-#        if hotkey is not None:
-#            hotkeystr += hotkey
-#        echo(buf,datestamp=False)
-#
-#    if currecord != oldrecord:
-#      echo("{yellow}** NEEDS SAVE **{/yellow}", datestamp=False)
-#
-#    echo()
-#
-#    ch = accept(prompt, hotkeystr, defaulthotkey)
-#    ch = ch.lower()
-#    longlabel = hotkeys[ch]["longlabel"] if hotkeys[ch].has_key("longlabel") else None
-#    if longlabel is not None:
-#        echo("{cyan}%s{/cyan} -- %s" % (ch.upper(), longlabel), datestamp=False)
-#    else:
-#        echo("{cyan}%s{/cyan}" % (ch.upper()), datestamp=False)
-#    return hotkeys[ch]
-
-  
 # @see https://stackoverflow.com/questions/9043551/regex-that-matches-integers-only
 def inputinteger(prompt, oldvalue=None, **kw) -> int:
   oldvalue = int(oldvalue) if oldvalue is not None else ""
