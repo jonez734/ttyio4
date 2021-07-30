@@ -368,7 +368,8 @@ def __tokenizemci(buf:str, args:object=Namespace()):
 #        print("%r: " % (kind))
 #        for g in range(1, len(mo.groups())+1):
 #          print("%d: %s" % (g, mo.group(g)))
-
+#        if include is not [] and kind.upper() not in include:
+#          continue
         value = mo.group()
         if kind == "WHITESPACE":
           if value == "\n":
@@ -414,8 +415,10 @@ def __tokenizemci(buf:str, args:object=Namespace()):
           # print("value.command=%r, value.repeat=%r" % (command, repeat))
         elif kind == "VAR":
           # echo("var! mo.groups=%r" % (repr(mo.groups())), level="debug", interpret=False)
-          var = mo.group(35)
-          value = getvariable(var)
+          value = getvariable(mo.group(35))
+          for t in __tokenizemci(str(value)):
+            # print("{var} yielding token %r" % (t,))
+            yield t
           # print("__tokenizemci.100: var=%r value=%r" % (var, value))
         elif kind == "CURSORUP":
           value = mo.group(38) or 1 # \x1b[<repeat>A
@@ -434,7 +437,9 @@ def __tokenizemci(buf:str, args:object=Namespace()):
           value = (name, int(repeat))
         elif kind == "EMOJI":
           value = mo.group(56)
-        yield Token(kind, value)
+        t = Token(kind, value)
+        # print("yielding token %r" % (t,))
+        yield t
 
 def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, end:str="\n", args=Namespace()) -> str:
   if buf is None or buf == "":
@@ -552,18 +557,22 @@ def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, 
         result += token.value
         pos += 1
       elif token.type == "VAR":
-        v = str(token.value)
-        result += v
-        pos += len(v)
+        pass
+        # put the contents of the {var} into the buffer at the location, and move along. do not call interpretmci().
+        # print("interpretmci.100: token.value=%r" % (str(token.value)))
+        #v = str(token.value)
+        #result += v
+        # print("interpretmci.120: result=%r" % (result))
+        #if wordwrap is True:
+        #  pos += len(v)
 
   return result
 
 # copied from bbsengine.py
-def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, datestamp=False, end:str="\n", width:int=None, wordwrap=True, flush=False, args:object=Namespace(), **kw):
-
+def echo(buf:str="", interpret=True, strip:bool=False, level:str=None, datestamp=False, end:str="\n", width:int=None, wordwrap=True, flush=False, args:object=Namespace(), **kw):
   if width is None:
     width = getterminalwidth()
-  
+
   if datestamp is True:
     now = datetime.now(tzlocal())
     stamp = strftime("%Y-%b-%d %I:%M:%S%P %Z (%a)", now.timetuple())
@@ -582,9 +591,12 @@ def echo(buf:str="", interpret:bool=True, strip:bool=False, level:str=None, date
 
   if interpret is True:
     buf = interpretmci(buf, strip=strip, width=width, end=end, wordwrap=wordwrap, args=args)
+
   print(buf, end=end)
+
   if flush is True:
     sys.stdout.flush()
+
   return
 
 def getcursorposition():
