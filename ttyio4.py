@@ -335,7 +335,7 @@ class Token(NamedTuple):
 def __tokenizemci(buf:str, args:object=Namespace()):
     buf = buf.replace("\n", " ")
     token_specification = [
-        ("ACS",        r'\{ACS:([a-z0-9]+)(:([0-9]{,3}))?\}'),
+        ("ACS",        r'\{ACS:([a-z\d]+)(:([\d]{,3}))?\}'),
         ("OPENBRACE",  r'\{\{'),
         ("CLOSEBRACE", r'\}\}'),
         ("RESETCOLOR", r'\{/ALL\}'),
