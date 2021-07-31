@@ -18,7 +18,7 @@ setup(
   py_modules=[projectname, "areyousure"],
   requires=[],
   scripts=["areyousure"],
-  license="GPLv2",
+  license="GPLv3",
   provides=[projectname],
   classifiers=[
     "Programming Language :: Python :: 3.7",
