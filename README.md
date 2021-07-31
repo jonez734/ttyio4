@@ -60,6 +60,7 @@
   * https://serverfault.com/questions/13898/how-to-find-out-if-a-terminal-supports-utf-8
   * https://unix.stackexchange.com/questions/10698/timing-out-in-a-shell-script
   * https://unix.stackexchange.com/a/250063
+- [ ] optimize-- store previous command, do not emit twice
 ## notes
 - order of patterns is critical. do not mess with it, else many code changes will be triggered
 - DECDWL/DECDHL (double height, double width) -- not supported by gnome-terminal (vte)
