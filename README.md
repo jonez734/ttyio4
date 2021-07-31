@@ -15,18 +15,19 @@
 - [x] pick a bgcolor/color for level="debug" in echo()
 - [x] handle arrow keys (\x1b[A, etc).. maybe ftell() will work? no, sys.stdin is not seekable
 - [ ] variables
-  * not recursive
+  * recursive
   * setvariable(name, value) - set variable <name> to <value>
   * getvariable(name) - returns variables[name] if name exists, else None (which is also a valid value. only other option would be to raise an exception)
   * clearvariables() - resets the variables dict to empty
   * usage: {var:<name>} in echo()
+  * [x] wordwrap does not work right if a var has a command in it ("{green}eggs"), which needs to work for displaymenu() to be customizable.
 - [ ] getch
   * gets a single char using select/read for async
   * since ~may 2021, working to add handling of cursor keys, backspace, home, end, ctrl-u.
   * thought about trying ftell() to handle arrow keys, but sys.stdin is not seekable.
   * settled on making a loop that reads one byte at a time, setting a flag when it's an esc, and then returning a string like 'KEY_CURSORDOWN', etc
   * when handling backspace, it will not work to move the cursor left and erase to end-of-line (libreadline should be emulated). 
-  * solution is to backspace, print a space, then backspace again. also update the buffer.
+  * solution is to backspace, print a space, then backspace again. also update the buffer and position
   * [ ] handle hitting esc and returning KEY_ESC while also handling cursor keys and home/end/etc?
   * home, ctrl-a
   * end, ctrl-e
@@ -46,10 +47,16 @@
  * https://stackoverflow.com/questions/3220031/how-to-filter-or-replace-unicode-characters-that-would-take-more-than-3-bytes
  * https://en.wikipedia.org/wiki/Emoticons_(Unicode_block)
  * https://medium.com/analytics-vidhya/how-to-print-emojis-using-python-2e4f93443f7e
-[ ] if no pattern matches in echo(), 'mismatch' takes over and displays the command and all following commands as plain text
-
+ * https://unicode.org/emoji/charts/emoji-list.html
+ * https://medium.com/analytics-vidhya/how-to-print-emojis-using-python-2e4f93443f7e
+ * https://stackoverflow.com/questions/10569438/how-to-print-unicode-character-in-python
+- [ ] if no pattern matches in echo(), 'mismatch' takes over and displays the command and all following commands as plain text
+- [ ] in getch(), poll for notifications
+- [ ] handle signal.SIGHUP same as EOF and INTR
+- [x] handle {var} using yield: https://www.geeksforgeeks.org/use-yield-keyword-instead-return-keyword-python/
+- [ ] check for recursion in {var} commands
+  * [problem of recursive includes](https://andybargh.com/problem-of-recursive-includes/)
 ## notes
-
 - order of patterns is critical. do not mess with it, else many code changes will be triggered
 - DECDWL/DECDHL (double height, double width) -- not supported by gnome-terminal (vte)
   * https://gitlab.gnome.org/GNOME/vte/-/issues/195
@@ -58,17 +65,15 @@
   * perhaps set up an echo/read loop similar to detecting ansi that can figure out if double height is supported.
   * https://en.wikipedia.org/wiki/ANSI_escape_code#Terminal_input_sequences
   * https://stackoverflow.com/questions/3470106/printing-double-size-characters-with-ncurses
-
 - for a specific app, need a way to find out the ascii value of the character under the cursor
   * https://unix.stackexchange.com/questions/76742/is-it-possible-to-get-a-character-at-terminal-cursor-using-ansi-escape-codes
   * mvinch() (ncurses)
   * https://stackoverflow.com/questions/35961761/how-can-i-get-a-character-in-a-position-of-the-screen-with-ncurses-in-c
 - https://unix.stackexchange.com/questions/255707/what-are-the-keyboard-shortcuts-for-the-command-line/255735 --- list of editing shortcuts
-
 - figure out max length of the buffer, check to see if buf is that length, and if there has not been a match, reset flag and buffer. ty pscug 20210627
 - check for failure. if I am at maxlength of buffer, and the lookup fails, reset buffer and flag.
 - watch for escape sequences I care about from a table and ignore the seq that are not interesting.
-- code page 437
+- code page 437 (ibm character set)
   * https://en.wikipedia.org/wiki/Code_page_437
   * https://www.google.com/search?q=linux+how+do+I+enter+unicode+characters+from+a+different+page&oq=linux+how+do+I+enter+unicode+characters+from+a+different+page&aqs=chrome..69i57.10027j0j7&sourceid=chrome&ie=UTF-8
   * https://www.ascii-codes.com/
