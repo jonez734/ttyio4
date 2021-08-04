@@ -321,7 +321,7 @@ def setvariable(name:str, value):
 def getvariable(name:str):
   if name in variables:
     return variables[name]
-  return "NOTFOUND"
+  return "NOTFOUND:%r" % (name)
 
 def clearvariables():
   variables = {}
