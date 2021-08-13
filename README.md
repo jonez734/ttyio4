@@ -6,9 +6,17 @@
 - [Build your own Command Line with ANSI escape codes](https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html)
 - 'readlike': python3-readlike-0.1.3-1.fc33.noarch.rpm 
 - http://www.cse.psu.edu/~kxc104/class/cse472/09f/hw/hw7/vt100ansi.htm
+- https://emu.edu/marketing/docs/emu-brand-identity.pdf
+- https://www.google.com/search?sxsrf=ALeKk01V-5vWfsbzppvZIHeziwKjMjOT1g:1628047373683&q=emich+color+gray&tbm=isch&chips=q:emich+color+gray,online_chips:heather+grey:uOX_WuOoSUo%3D&usg=AI4_-kQZSiTC0UndLOXXUhAtctE7eRJEWA&sa=X&ved=2ahUKEwjiy4qLtZbyAhUmAZ0JHYxZCR8QgIoDKAN6BAgIEBo&biw=1920&bih=982
+- https://encycolorpedia.com/9aa297#:~:text=Paints-,Benjamin%20Moore%20Heather%20Gray%20%2F%202139%2D40%20%2F%20%239aa297%20Hex,%25%20saturation%20and%2061%25%20lightness.
+- https://docs.python.org/3/library/re.html
+- https://docs.python.org/3/howto/regex.html#regex-howto
+- https://unix.stackexchange.com/questions/184345/detect-how-much-of-unicode-my-terminal-supports-even-through-screen?noredirect=1&lq=1
+
 
 ## todo
 
+- [ ] gray out menuitems which do not meet requirements, including not allowing the option letter
 - [ ] add kw arg to specify how \n is handled (space vs empty vs {f6})
 - [ ] pluggable mcicommand tables
 - [x] fix {f6:42} (prints a couple of newlines) (was using the wrong regexp group for the multiple)
