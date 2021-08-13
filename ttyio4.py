@@ -80,6 +80,16 @@ emoji = {
   "spiral":     "\U0001f4ab",
 }
 
+emich = {
+  "green":      "0;105;63",
+  "white":      "255;255;255",
+  "black":      "0;0;0",
+  "gray":       "154;162;151",
+  "mediumblue": "28;55;103",
+  "darkblue":   "16;44;82",
+  "lightblue":  "224;237;247"
+}
+
 # @see http://www.python.org/doc/faq/library.html#how-do-i-get-a-single-keypress-at-a-time
 # @see http://craftsman-hambs.blogspot.com/2009/11/getch-in-python-read-character-without.html
 def getch(noneok:bool=False, timeout=0.000125, echoch=False) -> str:
@@ -349,7 +359,7 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         ("DECRC",      r'\{DECRC\}'), # restore cursor position and attributes
         ("DECSTBM",    r'\{DECSTBM(:(\d{,3})(,(\d{,3}))?)?\}'),  # set top, bottom margin
         ("BELL",       r'\{BELL(:(\d{,2}))?\}'),
-        ("VAR",	       r'\{VAR:([0-9a-zA-Z_.-]+)\}'),
+        ("VAR",	       r'\{VAR:([\w.-]+)\}'),
         ("CURSORUP",   r'\{CURSORUP(:(\d{,3}))?\}'),
         ("CURSORRIGHT",r'\{CURSORRIGHT(:(\d{,3}))?\}'),
         ("CURSORLEFT", r'\{CURSORLEFT(:(\d{,3}))?\}'),
@@ -357,6 +367,7 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         ("WAIT",       r'\{WAIT:(\d)\}'),
         ("UNICODE",    r'\{(U|UNICODE):([a-z]+)(:([0-9]{,3}))?\}'),
         ("EMOJI",      r':([a-zA-Z0-9 -]+):'),
+        ("EMICH",      r'\{EMICH:(\w+)\}'),
         ("COMMAND",    r'\{[^\}]+\}'),     # {red}, {brightyellow}, etc
         ("WORD",       r'[^ \t\n\{\}]+'),
         ('MISMATCH',   r'.')            # Any other pattern
@@ -437,6 +448,8 @@ def __tokenizemci(buf:str, args:object=Namespace()):
           value = (name, int(repeat))
         elif kind == "EMOJI":
           value = mo.group(56)
+        elif kind == "EMICH":
+          value = mo.group(58)
         t = Token(kind, value)
         # print("yielding token %r" % (t,))
         yield t
@@ -542,6 +555,12 @@ def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, 
         name = token.value
         if name in emoji:
           result += emoji[name]
+      elif token.type == "EMICH":
+        name = token.value
+        print("type=EMICH, name=%r resolve=%r" % (name, emich[name]))
+        if name in emich:
+          print("name in emich")
+          result += "\033[38;2;%sm" % (emich[name])
       elif token.type == "WORD":
         if wordwrap is True:
           if pos+len(token.value) >= width-1:
