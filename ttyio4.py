@@ -214,6 +214,45 @@ def accept(prompt:str, options:str, default:str="", debug:bool=False) -> str:
     elif ch in options:
       return ch
 
+# c64 color palette
+colors = (
+{ "command": "{white}",      "ansi": "38;2;255;255;255m", "rgb": (255,255,255) }, # 37m
+{ "command": "{red}",        "ansi": "38;2;136;0;0m",     "rgb": (136,0,0) }, # 31m
+{ "command": "{cyan}",       "ansi": "38;2;170;255;238m", "rgb": (170,255,238) }, # 36m
+{ "command": "{purple}",     "ansi": "38;2;204;68;204m",  "rgb": (204, 68, 204) }, # 35m
+{ "command": "{green}",      "ansi": "38;2;0;204;85m",    "rgb": (0,204,85) }, # 32m
+{ "command": "{blue}",       "ansi": "38;2;0;0;170m",     "rgb": (0,0,170) }, # 34m
+{ "command": "{yellow}",     "ansi": "38;2;238;238;119m", "rgb": (238,238,119) }, # 33m
+{ "command": "{orange}",     "ansi": "38;2;221;136;85m",  "rgb": (221,136,85) },
+{ "command": "{brown}",      "ansi": "38;2;102;68;0m",    "rgb": (102,68,0) },
+{ "command": "{lightred}",   "ansi": "38;2;255;119;119m", "rgb": (255, 119, 119) },
+{ "command": "{darkgray}",   "ansi": "38;2;51;51;51m",    "rgb": (51, 51, 51) },
+{ "command": "{gray}",       "ansi": "38;2;119;119;119m", "rgb": (119, 119, 119) },
+{ "command": "{lightgreen}", "ansi": "38;2;170;255;102m", "rgb": (170, 255, 102) },
+{ "command": "{lightblue}",  "ansi": "38;2;0;136;255m",   "rgb": (0, 136, 255) },
+{ "command": "{lightgray}",  "ansi": "38;2;187;187;187m", "rgb": (187, 187, 187) },
+{ "command": "{black}",      "ansi": "38;2;0;0;0m",       "rgb": (0,0,0) }, # 30m
+)
+
+bgcolors = (
+{ "command": "{bgwhite}",      "ansi": "48;2;255;255;255m", "rgb": (255,255,255) }, # 37m
+{ "command": "{bgred}",        "ansi": "48;2;136;0;0m",     "rgb": (136,0,0) }, # 31m
+{ "command": "{bgcyan}",       "ansi": "48;2;170;255;238m", "rgb": (170,255,238) }, # 36m
+{ "command": "{bgpurple}",     "ansi": "48;2;204;68;204m",  "rgb": (204, 68, 204) }, # 35m
+{ "command": "{bggreen}",      "ansi": "48;2;0;204;85m",    "rgb": (0,204,85) }, # 32m
+{ "command": "{bgblue}",       "ansi": "48;2;0;0;170m",     "rgb": (0,0,170) }, # 34m
+{ "command": "{bgyellow}",     "ansi": "48;2;238;238;119m", "rgb": (238,238,119) }, # 33m
+{ "command": "{bgorange}",     "ansi": "48;2;221;136;85m",  "rgb": (221,136,85) },
+{ "command": "{bgbrown}",      "ansi": "48;2;102;68;0m",    "rgb": (102,68,0) },
+{ "command": "{bglightred}",   "ansi": "48;2;255;119;119m", "rgb": (255, 119, 119) },
+{ "command": "{bgdarkgray}",   "ansi": "48;2;51;51;51m",    "rgb": (51, 51, 51) },
+{ "command": "{bggray}",       "ansi": "48;2;119;119;119m", "rgb": (119, 119, 119) },
+{ "command": "{bglightgreen}", "ansi": "48;2;170;255;102m", "rgb": (170, 255, 102) },
+{ "command": "{bglightblue}",  "ansi": "48;2;0;136;255m",   "rgb": (0, 136, 255) },
+{ "command": "{bglightgray}",  "ansi": "48;2;187;187;187m", "rgb": (187, 187, 187) },
+{ "command": "{bgblack}",      "ansi": "48;2;0;0;0m",       "rgb": (0,0,0) } # 30m
+)
+
 # https://www.c64-wiki.com/wiki/Color
 # https://en.wikipedia.org/wiki/ANSI_escape_code
 mcicommands = (
@@ -245,40 +284,7 @@ mcicommands = (
 { "command": "{reverse}",    "ansi": "7m" },
 { "command": "{/reverse}",   "ansi": "27m" },
 
-# c64 color palette
-{ "command": "{white}",      "ansi": "38;2;255;255;255m", "rgb": (255,255,255) }, # 37m
-{ "command": "{red}",        "ansi": "38;2;136;0;0m",     "rgb": (136,0,0) }, # 31m
-{ "command": "{cyan}",       "ansi": "38;2;170;255;238m", "rgb": (170,255,238) }, # 36m
-{ "command": "{purple}",     "ansi": "38;2;204;68;204m",  "rgb": (204, 68, 204) }, # 35m
-{ "command": "{green}",      "ansi": "38;2;0;204;85m",    "rgb": (0,204,85) }, # 32m
-{ "command": "{blue}",       "ansi": "38;2;0;0;170m",     "rgb": (0,0,170) }, # 34m
-{ "command": "{yellow}",     "ansi": "38;2;238;238;119m", "rgb": (238,238,119) }, # 33m
-{ "command": "{orange}",     "ansi": "38;2;221;136;85m",  "rgb": (221,136,85) },
-{ "command": "{brown}",      "ansi": "38;2;102;68;0m",    "rgb": (102,68,0) },
-{ "command": "{lightred}",   "ansi": "38;2;255;119;119m", "rgb": (255, 119, 119) },
-{ "command": "{darkgray}",   "ansi": "38;2;51;51;51m",    "rgb": (51, 51, 51) },
-{ "command": "{gray}",       "ansi": "38;2;119;119;119m", "rgb": (119, 119, 119) },
-{ "command": "{lightgreen}", "ansi": "38;2;170;255;102m", "rgb": (170, 255, 102) },
-{ "command": "{lightblue}",  "ansi": "38;2;0;136;255m",   "rgb": (0, 136, 255) },
-{ "command": "{lightgray}",  "ansi": "38;2;187;187;187m", "rgb": (187, 187, 187) },
-{ "command": "{black}",      "ansi": "38;2;0;0;0m",       "rgb": (0,0,0) }, # 30m
 
-{ "command": "{bgwhite}",      "ansi": "48;2;255;255;255m", "rgb": (255,255,255) }, # 37m
-{ "command": "{bgred}",        "ansi": "48;2;136;0;0m",     "rgb": (136,0,0) }, # 31m
-{ "command": "{bgcyan}",       "ansi": "48;2;170;255;238m", "rgb": (170,255,238) }, # 36m
-{ "command": "{bgpurple}",     "ansi": "48;2;204;68;204m",  "rgb": (204, 68, 204) }, # 35m
-{ "command": "{bggreen}",      "ansi": "48;2;0;204;85m",    "rgb": (0,204,85) }, # 32m
-{ "command": "{bgblue}",       "ansi": "48;2;0;0;170m",     "rgb": (0,0,170) }, # 34m
-{ "command": "{bgyellow}",     "ansi": "48;2;238;238;119m", "rgb": (238,238,119) }, # 33m
-{ "command": "{bgorange}",     "ansi": "48;2;221;136;85m",  "rgb": (221,136,85) },
-{ "command": "{bgbrown}",      "ansi": "48;2;102;68;0m",    "rgb": (102,68,0) },
-{ "command": "{bglightred}",   "ansi": "48;2;255;119;119m", "rgb": (255, 119, 119) },
-{ "command": "{bgdarkgray}",   "ansi": "48;2;51;51;51m",    "rgb": (51, 51, 51) },
-{ "command": "{bggray}",       "ansi": "48;2;119;119;119m", "rgb": (119, 119, 119) },
-{ "command": "{bglightgreen}", "ansi": "48;2;170;255;102m", "rgb": (170, 255, 102) },
-{ "command": "{bglightblue}",  "ansi": "48;2;0;136;255m",   "rgb": (0, 136, 255) },
-{ "command": "{bglightgray}",  "ansi": "48;2;187;187;187m", "rgb": (187, 187, 187) },
-{ "command": "{bgblack}",      "ansi": "48;2;0;0;0m",       "rgb": (0,0,0) } # 30m
 
 #{ "command": "{autowhite}",    "alias": "{bold}{white}"},
 #{ "command": "{autored}",      "alias": "{bold}{red}"},
@@ -455,10 +461,18 @@ def __tokenizemci(buf:str, args:object=Namespace()):
         yield t
 
 def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, end:str="\n", args=Namespace()) -> str:
+  result = ""
+
+  def handlecommand(table, value):
+    for item in table:
+      command = item["command"]
+      if value == command:
+        return "\033[%s" % (item["ansi"])
+    return False
+
   if buf is None or buf == "":
     return ""
 
-  result = ""
   if strip is True:
     for token in __tokenizemci(buf):
       if token.type == "WORD" or token.type == "WHITESPACE":
@@ -488,18 +502,34 @@ def interpretmci(buf:str, width:int=None, strip:bool=False, wordwrap:bool=True, 
           # result += "{command: %r}" % (token.value)
           value = token.value.lower()
           # print("value=%r" % (value))
-          for item in mcicommands:
-            # print("item=%r" % (item))
-            command = item["command"]
-            ansi = item["ansi"] if "ansi" in item else None
-            alias = item["alias"] if "alias" in item else None
-            if value == command:
-              if ansi is not None:
-                # print("added ansi seq")
-                result += "\033[%s" % (ansi)
-              elif alias is not None:
-                result += alias
+          res = False
+          for t in [mcicommands, colors, bgcolors]:
+            res = handlecommand(t, value)
+            if type(res) == str:
+              result += res
               break
+          if res is False:
+            print("syntax error: %r" % (value))
+            continue
+#          res = handlecommand(colors, value)
+#          for item in colors:
+#            command = item["command"]
+#            if value == command:
+#              result += "\033[%s" % (item["ansi"])
+#              break
+
+#          for item in mcicommands:
+#            # print("item=%r" % (item))
+#            command = item["command"]
+#            ansi = item["ansi"] if "ansi" in item else None
+#            alias = item["alias"] if "alias" in item else None
+#            if value == command:
+#              if ansi is not None:
+#                # print("added ansi seq")
+#                result += "\033[%s" % (ansi)
+#              elif alias is not None:
+#                result += alias
+#              break
       elif token.type == "DECSC":
         result += "\033[s"
       elif token.type == "DECRC":
