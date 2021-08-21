@@ -28,6 +28,7 @@ setup(
     "Operating System :: POSIX",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Terminals",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
   ],
   long_description = """terminal input and output functions.""",
   command_options = {
