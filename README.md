@@ -69,6 +69,13 @@
   * https://unix.stackexchange.com/questions/10698/timing-out-in-a-shell-script
   * https://unix.stackexchange.com/a/250063
 - [ ] optimize-- store previous command, do not emit twice
+- [x] optimization
+  * move color and bgcolor to their own tables,
+  * add handlecommand() subfunction.
+  * side-effect is that if a syntax error exists e.g. {syntaxerror}, it will output a message.
+  * prolly did help performance all that much.
+  * helps w the ability to override the tables
+
 ## notes
 - order of patterns is critical. do not mess with it, else many code changes will be triggered
 - DECDWL/DECDHL (double height, double width) -- not supported by gnome-terminal (vte)
