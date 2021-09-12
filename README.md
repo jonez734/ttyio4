@@ -98,3 +98,15 @@
   * https://www.google.com/search?q=linux+how+do+I+enter+unicode+characters+from+a+different+page&oq=linux+how+do+I+enter+unicode+characters+from+a+different+page&aqs=chrome..69i57.10027j0j7&sourceid=chrome&ie=UTF-8
   * https://www.ascii-codes.com/
   * https://www.google.com/search?q=code+page+437+names&oq=code+page+437+names&aqs=chrome.0.69i59.3385j0j7&sourceid=chrome&ie=UTF-8
+- running python3.9.6.exe under wine fails, because the setup requires windows 8 or newer and wine reports as 6.1.7601.
+  * [016C:017C][2021-08-23T19:07:01]e000: Detected Windows 7 
+    [016C:017C][2021-08-23T19:07:01]e000: Windows 8.1 or later is required to continue installation
+  * use winecfg to change to win10, and python39 installs fine
+  * ttyio install fails with "termios does not exist"
+- win64 port
+  * won't happen easily, termios module does not exist
+  * possible msvcrt will work, not interested in trying right now
+  * https://www.google.com/search?q=python3+termios+windows&oq=python3+termios+windows&aqs=chrome..69i57j0i22i30.5221j0j7&sourceid=chrome&ie=UTF-8
+  * https://stackoverflow.com/questions/45147008/use-getch-in-while-1-python
+- [getch implemented as python extension](https://pypi.org/project/getch/#files)
+- https://www.mail-archive.com/linux-il@cs.huji.ac.il/msg66473.html
