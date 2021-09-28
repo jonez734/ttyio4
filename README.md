@@ -50,7 +50,7 @@
 - [x] add handling for card suits (code page 437). https://en.wikipedia.org/wiki/Code_page_437
 - [ ] https://en.wikipedia.org/wiki/File:VTTEST-doublesize.png
 - [ ] move collapselist() to bbsengine5
-- [ ] handle unicode strings (emojis, box characters, card suits)
+- [x] handle unicode strings (emojis, box characters, card suits)
  * '\U0001xxxx' is the key (cap U, prefix with three 0s)
  * https://stackoverflow.com/questions/3220031/how-to-filter-or-replace-unicode-characters-that-would-take-more-than-3-bytes
  * https://en.wikipedia.org/wiki/Emoticons_(Unicode_block)
@@ -75,6 +75,7 @@
   * side-effect is that if a syntax error exists e.g. {syntaxerror}, it will output a message.
   * prolly did help performance all that much.
   * helps w the ability to override the tables
+- [ ] change inputboolean() such that True or False can be passed as the default value.
 
 ## notes
 - order of patterns is critical. do not mess with it, else many code changes will be triggered
@@ -110,3 +111,4 @@
   * https://stackoverflow.com/questions/45147008/use-getch-in-while-1-python
 - [getch implemented as python extension](https://pypi.org/project/getch/#files)
 - https://www.mail-archive.com/linux-il@cs.huji.ac.il/msg66473.html
+- https://github.com/joeyespo/py-getch/blob/master/getch/getch.py
